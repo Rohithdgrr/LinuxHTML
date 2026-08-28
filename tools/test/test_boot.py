@@ -15,7 +15,7 @@ def test_pwa_exists():
 
 def test_index_has_first_run_disclosure():
     html = (PWA / "index.html").read_text(encoding="utf-8")
-    assert "First-run disclosure" in html, "First-run disclosure missing per README-1.md:745"
+    assert "first-run" in html.lower() and "disclosure" in html.lower(), "First-run disclosure missing per README-1.md:745 (now light theme Welcome to LinuxHTML – First-Run Disclosure)"
     assert "SharedArrayBuffer" in html or "capability" in html, "Capability probe missing per README-1.md:1926"
     assert "verify" in html.lower(), "Integrity verification missing per README-1.md:1501"
 

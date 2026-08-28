@@ -41,7 +41,7 @@ def test_pwa_has_canvas_and_statusbar():
     assert 'id="screen"' in html, "PWA must have #screen canvas per README-1.md:1242"
     assert 'width="1024"' in html and 'height="768"' in html, "PWA canvas 1024x768 per README-1.md:1242"
     assert 'id="statusbar"' in html or 'id="status"' in html, "PWA must have statusbar per docs/UI-UX"
-    assert 'First-run disclosure' in html, "PWA must have disclosure per README-1.md:745"
+    assert 'first-run' in html.lower() and 'disclosure' in html.lower(), "PWA must have disclosure per README-1.md:745 (light theme Welcome to LinuxHTML – First-Run Disclosure)"
     assert 'dirty rect' in html.lower() or 'Canvas2D' in html, "PWA must mention Canvas2D dirty-rect per README-1.md:1200"
 
 def test_main_integrates_display():

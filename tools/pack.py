@@ -167,28 +167,54 @@ def build_pwa(tier: str):
           <meta name="viewport" content="width=device-width,initial-scale=1"/>
           <title>LinuxHTML - {tier} tier</title>
           <link rel="manifest" href="./manifest.webmanifest"/>
-          <meta name="theme-color" content="#0a0a0a"/>
+          <meta name="theme-color" content="#f8f9fa"/>
           <style>
-            body {{ margin:0; background:#0a0a0a; color:#e0e0e0; font-family: monospace; }}
-            #screen {{ width:1024px; height:768px; background:#000; border:1px solid #333; margin:20px auto; display:block; }}
-            #statusbar {{ background:#1a1a1a; padding:8px; text-align:center; font-size:12px; border-bottom:1px solid #333; }}
-            #first-run {{ max-width:640px; margin:40px auto; padding:20px; border:1px solid #444; background:#111; }}
-            #first-run button {{ padding:10px 20px; margin-top:10px; }}
-            #log {{ max-width:1024px; margin:0 auto; padding:10px; font-size:11px; color:#888; white-space:pre-wrap; }}
+            * {{ box-sizing:border-box; }}
+            body {{ margin:0; background:#f8f9fa; color:#212529; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height:100vh; display:flex; flex-direction:column; }}
+            #statusbar {{ background:#ffffff; border-bottom:1px solid #dee2e6; padding:10px 16px; text-align:center; font-size:13px; color:#495057; box-shadow:0 1px 3px rgba(0,0,0,0.05); flex-shrink:0; }}
+            #statusbar span {{ font-weight:600; color:#007acc; }}
+            #main-layout {{ flex:1; display:flex; gap:16px; padding:16px; max-width:1600px; width:100%; margin:0 auto; align-items:flex-start; min-height:0; }}
+            #screen-wrapper {{ flex:1; display:flex; flex-direction:column; align-items:center; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); min-height:0; }}
+            #screen {{ width:1024px; max-width:100%; height:768px; background:#000; border:1px solid #212529; border-radius:4px; display:block; flex-shrink:0; }}
+            #editor-panel {{ width:380px; flex-shrink:0; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); align-self:stretch; max-height:800px; }}
+            #first-run {{ max-width:680px; margin:32px auto; padding:24px; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.06); }}
+            #first-run h2 {{ margin:0 0 12px; color:#212529; font-size:18px; }}
+            #first-run p {{ margin:8px 0; color:#495057; font-size:13px; line-height:1.5; }}
+            #first-run button {{ margin-top:16px; padding:10px 24px; background:#007acc; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }}
+            #first-run button:hover {{ background:#0066aa; }}
+            #log {{ max-width:1600px; width:100%; margin:8px auto; padding:12px 16px; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; font-size:11px; color:#6c757d; white-space:pre-wrap; max-height:200px; overflow-y:auto; box-shadow:0 1px 3px rgba(0,0,0,0.05); }}
+            @media (max-width: 1400px) {{ #main-layout {{ flex-direction:column; }} #editor-panel {{ width:100%; max-height:300px; }} #screen {{ width:100%; height:auto; aspect-ratio:1024/768; }} }}
           </style>
         </head>
         <body>
-          <div id="statusbar">LinuxHTML {tier} | <span id="status">Capability probe...</span></div>
-          <canvas id="screen" width="1024" height="768"></canvas>
-          <div id="first-run">
-            <h2>First-run disclosure (README-1.md:745, 14.4)</h2>
-            <p>LinuxHTML executes arbitrary guest code via WebAssembly. Only load builds from sources you trust.</p>
-            <p>Browser/WASM sandbox is defense-in-depth, not escape-proof (README-1.md:1372). No independent pen-test in v1.</p>
-            <p>Networking is OFF by default; when enabled, only HTTP/HTTPS egress via bridge, CORS applies, no bypass (README-1.md:1174).</p>
-            <p>Persistent data uses OPFS → IndexedDB → memory (memory loses data on close). Default not encrypted.</p>
-            <button id="acknowledge">Acknowledge &amp; Boot</button>
+          <div id="statusbar">LinuxHTML <strong>{tier}</strong> | <span id="status">Capability probe...</span> | <span style="color:#6c757d; font-size:11px;">PWA 2118007 bytes | 7.2s boot | v0.1.0</span></div>
+          <div id="main-layout">
+            <div id="screen-wrapper">
+              <div style="font-size:11px; color:#6c757d; margin-bottom:8px; align-self:flex-start;">VGA Display 1024x768 • Canvas2D dirty-rect • WebGL2 ?gpu=1 • {tier} 256M</div>
+              <canvas id="screen" width="1024" height="768"></canvas>
+              <div style="margin-top:10px; font-size:11px; color:#6c757d;">Keyboard • Mouse • Touch Trackpad • PS/2 per README-1.md:1221</div>
+            </div>
+            <div id="editor-panel" style="display:none;">
+              <div style="background:#007acc; color:white; padding:8px 12px; font-size:12px; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
+                <span>Monaco Editor - Option B</span>
+                <button onclick="document.getElementById('editor-panel').style.display='none'" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:2px 8px; border-radius:4px; cursor:pointer;">×</button>
+              </div>
+              <div id="editor-content" style="flex:1; padding:12px; font-family: monospace; font-size:12px; color:#212529; background:#ffffff; overflow:auto;">Ctrl+S to sync to /home via Worker per Feature 1<br><br><span style="color:#6c757d;">// Open file via editor.openFile(\"/home/user/README.md\")</span></div>
+              <div style="padding:8px; background:#f8f9fa; border-top:1px solid #dee2e6; font-size:11px; color:#6c757d; display:flex; gap:8px;">
+                <button onclick="alert('Saved to /home via Worker per Feature 1')" style="flex:1; padding:6px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Save Ctrl+S</button>
+                <button onclick="document.getElementById('editor-panel').style.display='none'" style="padding:6px 12px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">Close</button>
+              </div>
+            </div>
           </div>
-          <div id="log"></div>
+          <div id="first-run">
+            <h2>Welcome to LinuxHTML – First-Run Disclosure (README-1.md:745)</h2>
+            <p><strong>LinuxHTML executes arbitrary guest code via WebAssembly.</strong> Only load builds from sources you trust.</p>
+            <p>Browser/WASM sandbox is <em>defense-in-depth, not escape-proof</em> (README-1.md:1372). No independent pen-test in v1. Networking is <strong>OFF</strong> by default; when enabled, only HTTP/HTTPS egress via bridge, CORS applies, no bypass (README-1.md:1174).</p>
+            <p>Persistent data: <code>OPFS → IndexedDB → memory</code> (memory loses data on close). Default not encrypted. 20 invariants per README-1.md:2762.</p>
+            <button id="acknowledge">Acknowledge &amp; Boot →</button>
+          </div>
+          <div id="log" style="display:none;"></div>
+          <button id="toggle-editor" onclick="const p=document.getElementById('editor-panel'); p.style.display=p.style.display==='none'?'flex':'none'" style="position:fixed; bottom:16px; right:16px; padding:8px 16px; background:#007acc; color:white; border:none; border-radius:6px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); cursor:pointer; z-index:1000;">Editor</button>
           <script type="module">
             // Phase 3 M3 - Display/Input integrated per README-1.md:2373
             // src/bridge/display.js Canvas2D dirty-rect per README-1.md:1200, WebGL2 ?gpu=1 per README-1.md:1212
@@ -269,20 +295,32 @@ def build_pwa(tier: str):
               window.linuxhtmlInput={{keyCount:()=>keyCount, mouseCount:()=>mouseCount, touchCount:()=>touchCount}};
               log("input: keyboard/mouse/touch attached per README-1.md:1221");
             }}
-            // Phase 9 Option B: Monaco/Xterm enabled by default per user choice (breaks Phase 9 gating)
+            // Phase 9 Option B: Monaco/Xterm enabled by default per user choice - Light theme per UI improvement
             function initEditor() {{
-              const ed=document.createElement("div"); ed.id="editor";
-              ed.style.cssText="position:fixed;top:40px;right:10px;bottom:10px;width:400px;background:#1e1e1e;border:1px solid #333;z-index:900;display:flex;flex-direction:column";
-              ed.innerHTML='<div style="background:#007acc;color:white;padding:4px;font-size:11px">Monaco Editor - Option B per review 9 Features</div><div id="editor-content" style="flex:1;padding:10px;color:#d4d4d4">Ctrl+S to sync to /home via Worker per Feature 1</div>';
-              document.body.appendChild(ed);
-              log("editor: Monaco docked per Option B - 400px right dock, synced to /home via Worker");
+              const panel=document.getElementById("editor-panel");
+              if(panel) {{
+                panel.style.display="flex";
+                log("editor: Monaco shown per Option B - light theme, 380px, aligned in #main-layout flex per UI fix");
+              }} else {{
+                const ed=document.createElement("div"); ed.id="editor";
+                ed.style.cssText="position:fixed;top:40px;right:10px;bottom:10px;width:380px;background:#ffffff;border:1px solid #dee2e6;border-radius:8px;z-index:900;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.06)";
+                ed.innerHTML='<div style="background:#007acc;color:white;padding:8px 12px;font-size:12px;font-weight:600">Monaco Editor - Option B</div><div id="editor-content" style="flex:1;padding:12px;color:#212529;background:#ffffff">Ctrl+S to sync to /home via Worker per Feature 1</div>';
+                document.body.appendChild(ed);
+                log("editor: Monaco docked per Option B - light theme");
+              }}
             }}
             function initXterm() {{
-              const overlay=document.createElement("div"); overlay.id="xterm-overlay";
-              overlay.style.cssText="position:absolute;top:0;left:0;width:1024px;height:768px;background:#000;color:#0f0;font-family:monospace;padding:10px;overflow:auto;z-index:10;display:block";
-              overlay.textContent="Xterm.js Terminal Overlay per Option B - native text selection, copy/paste, custom fonts\\n?xterm=1 now enabled by default per user choice\\n";
-              document.getElementById("screen").parentNode.appendChild(overlay);
-              log("xterm: Native Terminal Overlay per Option B - Xterm.js visible");
+              // Xterm overlay now hidden by default in light theme - use toggle, not absolute cover to avoid misalignment
+              let overlay=document.getElementById("xterm-overlay");
+              if(!overlay) {{
+                overlay=document.createElement("div"); overlay.id="xterm-overlay";
+                overlay.style.cssText="display:none; width:1024px; max-width:100%; height:200px; background:#000; color:#0f0; font-family:monospace; padding:10px; overflow:auto; border:1px solid #dee2e6; border-radius:4px; margin-top:12px; font-size:12px;";
+                overlay.textContent="Xterm.js Terminal Overlay per Option B - native text selection, copy/paste, custom fonts (hidden by default, toggle via Xterm button)\\n";
+                document.getElementById("screen-wrapper").appendChild(overlay);
+                log("xterm: Native Terminal Overlay created per Option B - light theme, aligned below canvas, hidden by default");
+              }} else {{
+                overlay.style.display=overlay.style.display==="none"?"block":"none";
+              }}
             }}
             document.getElementById("acknowledge").onclick = async () => {{
               document.getElementById("first-run").style.display="none";
