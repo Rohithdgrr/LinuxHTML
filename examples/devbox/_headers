@@ -1,0 +1,7 @@
+# _headers for static hosting per README-1.md:778 (PWA requires COOP/COEP for SMP)
+# For Netlify-style deploys; for other hosts configure equivalent response headers via tools/serve.py
+
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin

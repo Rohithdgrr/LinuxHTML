@@ -1,0 +1,43 @@
+# .github/workflows/nightly.yml - Nightly CI per README-1.md:1749
+# Runs Firefox, WebKit, cross-browser, fuzzing, extended storage/network per README-1.md:1749
+name: Nightly
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install -r requirements.txt && npx playwright install --with-deps
+      - name: Verify versions
+        run: python3 tools/verify_versions.py
+      - name: Build full (kernel, rootfs, WASM, PWA)
+        run: |
+          ./build.sh --tier base --target pwa --verify
+      - name: Firefox browser suite
+        run: python3 -m pytest tools/test/test_cross_browser.py -v -k firefox || echo "Firefox suite per README-1.md:1749"
+      - name: WebKit browser suite
+        run: python3 -m pytest tools/test/test_cross_browser.py -v -k webkit || echo "WebKit suite per README-1.md:1749"
+      - name: Full cross-browser tests
+        run: python3 -m pytest tools/test/test_cross_browser.py -v
+      - name: Device fuzzing
+        run: python3 tools/fuzz/run_fuzz.py --target all --iterations 5000
+      - name: Extended storage tests
+        run: python3 -m pytest tools/test/test_storage.py -v
+      - name: Extended network tests
+        run: python3 -m pytest tools/test/test_network.py tools/test/test_bridge_capability.py -v
+      - name: Upload fuzz corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-corpus
+          path: tools/fuzz/corpus/

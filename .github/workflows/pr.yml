@@ -1,0 +1,73 @@
+# .github/workflows/pr.yml - PR CI per README-1.md:1730
+# Every pull request runs 12 steps: deps verify, kernel, minimal QEMU, rootfs, real QEMU, WASM, PWA, single-file, size, Chromium smoke, storage, egress
+# A PR cannot merge if required gate fails per README-1.md:1730
+name: PR
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  pr:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Set up Node 20.x LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.11.1"
+          cache: "npm"
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86
+      - name: Install Docker
+        run: docker --version
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+      - name: 1. Dependency/version verification
+        run: python3 tools/verify_versions.py
+      - name: 2. Kernel build
+        run: |
+          chmod +x src/kernel/build.sh
+          ./src/kernel/build.sh 2>&1 | tee build/manifests/kernel-build.log
+          test -f src/kernel/bzImage
+      - name: 3. Minimal-initramfs native QEMU boot
+        run: |
+          chmod +x src/kernel/initramfs-minimal/build.sh
+          ./src/kernel/initramfs-minimal/build.sh
+          python3 tools/qemugate_check.py --strict
+      - name: 4. Real rootfs build
+        run: |
+          chmod +x src/rootfs/build.sh
+          ./src/rootfs/build.sh --tier base
+          test -f build/rootfs-base.squashfs
+      - name: 5. Real-root native QEMU boot
+        run: python3 tools/qemugate_real_check.py --tier base --strict
+      - name: 6. v86/WASM build
+        run: |
+          chmod +x src/emulator/build.sh
+          ./src/emulator/build.sh
+          test -f build/pwa/assets/v86.wasm
+      - name: 7. PWA packaging
+        run: python3 tools/pack.py --tier base --target pwa
+      - name: 8. Single-file packaging
+        run: python3 tools/pack.py --tier base --target single-file
+      - name: 9. Size-budget check
+        run: python3 tools/check_size.py
+      - name: 10. Chromium boot-smoke test
+        run: python3 -m pytest tools/test/test_boot.py -v
+      - name: 11. Storage/disk API tests
+        run: python3 -m pytest tools/test/test_storage.py tools/test/test_storage_worker.py -v
+      - name: 12. HTTP/HTTPS egress bridge tests
+        run: python3 -m pytest tools/test/test_network.py -v
+      - name: Verify integrity
+        run: python3 tools/verify_integrity.py --strict
+      - name: Check no unpinned deps
+        run: python3 tools/verify_versions.py --strict

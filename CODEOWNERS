@@ -1,0 +1,12 @@
+# CODEOWNERS - Second-maintainer review for security-sensitive changes per README-1.md:1482, README-1.md:2762:17
+# Security-sensitive changes require second-maintainer review per README-1.md:1482
+* @maintainer1 @maintainer2
+# Security-sensitive paths
+/src/kernel/linuxhtml_defconfig @maintainer1 @maintainer2
+/src/bridge/storage.js @maintainer1 @maintainer2
+/src/bridge/worker/storage-worker.js @maintainer1 @maintainer2
+/src/bridge/network.js @maintainer1 @maintainer2
+/versions.lock @maintainer1 @maintainer2
+/tools/verify_integrity.py @maintainer1 @maintainer2
+/tools/sign_manifest.py @maintainer1 @maintainer2
+/build.sh @maintainer1 @maintainer2

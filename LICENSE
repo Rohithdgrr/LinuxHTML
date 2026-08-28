@@ -1,0 +1,26 @@
+GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2026 LinuxHTML Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+--
+Per README-1.md:2752 LinuxHTML is licensed under GNU GPL v3.0.
+Subcomponents retain their own licenses:
+  - Linux kernel 6.6 LTS: GPL-2.0
+  - Alpine Linux 3.19: varies (see Alpine licensing)
+  - v86 emulator: BSD 2-Clause (https://github.com/copy/v86)
+  - SeaBIOS: LGPL-3.0
+See SBOM for full dependency licensing (build/manifests/sbom.spdx.json per README-1.md:1480).

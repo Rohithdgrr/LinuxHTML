@@ -1,0 +1,49 @@
+# LinuxHTML - gitignore per README-1.md:414 build/ is Generated artifacts; gitignored
+build/
+# PWA assets are built, not sourced
+# Keep src/ as source
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+package-lock.json
+dist/
+
+# Emulator build cache / emsdk
+src/emulator/v86/
+emsdk/
+emsdk-cache/
+
+# Kernel sources (fetched by build.sh)
+src/kernel/linux-6.6*/
+src/kernel/bzImage
+src/kernel/initramfs-minimal/initramfs-minimal.cpio
+*.stub
+
+# Rootfs docker layers
+.build-cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Bench artifacts
+docs/BENCHMARKS.md.draft
+tools/bench/results/
+
+# Local serve logs
+.serve.log

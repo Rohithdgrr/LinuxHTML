@@ -1,0 +1,144 @@
+# src/kernel/linuxhtml_defconfig - Linux 6.6 LTS config for LinuxHTML v1
+# Applied via src/kernel/build.sh Step 1 per README-1.md:498 -> src/kernel/bzImage
+# Changes require successful native-QEMU boot log per README-1.md:2221:3 (Contributing rule 3)
+# Must support: x86_64, VirtIO (block/9p/net/console), 9P hostfs, SquashFS, serial
+# Validated via QEMU gate per README-1.md:538:
+#   qemu-system-x86_64 -kernel src/kernel/bzImage -initrd src/kernel/initramfs-minimal/initramfs-minimal.cpio -nographic -m 256M
+
+# === Architecture ===
+CONFIG_64BIT=y
+CONFIG_X86_64=y
+CONFIG_X86=y
+CONFIG_OUTPUT_FORMAT="elf64-x86-64"
+CONFIG_LOCALVERSION="-linuxhtml"
+CONFIG_KERNEL_GZIP=y
+
+# === General ===
+CONFIG_SYSVIPC=y
+CONFIG_POSIX_MQUEUE=y
+CONFIG_AUDIT=y
+CONFIG_NO_HZ_IDLE=y
+CONFIG_HIGH_RES_TIMERS=y
+CONFIG_BPF=y
+CONFIG_BPF_SYSCALL=y
+
+# === CPU / SMP ===
+CONFIG_SMP=y
+CONFIG_NR_CPUS=4
+CONFIG_HOTPLUG_CPU=y
+
+# === Memory ===
+CONFIG_HIGHMEM64G=y
+CONFIG_MMU=y
+
+# === VirtIO (emulated by v86 per README-1.md:318) ===
+CONFIG_VIRTIO=y
+CONFIG_VIRTIO_PCI=y
+CONFIG_VIRTIO_PCI_LEGACY=y
+CONFIG_VIRTIO_BLK=y
+CONFIG_VIRTIO_NET=y
+CONFIG_VIRTIO_CONSOLE=y
+CONFIG_VIRTIO_9P=y
+CONFIG_HW_RANDOM_VIRTIO=y
+
+# === 9P / host9p root (product boot uses root=host9p per README-1.md:854) ===
+CONFIG_NET_9P=y
+CONFIG_NET_9P_VIRTIO=y
+CONFIG_9P_FS=y
+CONFIG_9P_FS_POSIX_ACL=y
+CONFIG_9P_FS_SECURITY=y
+
+# === PCI ===
+CONFIG_PCI=y
+CONFIG_PCI_HOST_GENERIC=y
+
+# === Block / Filesystems ===
+CONFIG_BLK_DEV=y
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_INITRAMFS_SOURCE=""
+CONFIG_RD_GZIP=y
+CONFIG_EXT4_FS=y
+CONFIG_EXT4_FS_XATTR=y
+CONFIG_SQUASHFS=y
+CONFIG_SQUASHFS_XATTR=y
+CONFIG_SQUASHFS_ZLIB=y
+CONFIG_SQUASHFS_LZO=y
+CONFIG_SQUASHFS_XZ=y
+CONFIG_OVERLAY_FS=y
+CONFIG_TMPFS=y
+CONFIG_TMPFS_POSIX_ACL=y
+CONFIG_PROC_FS=y
+CONFIG_SYSFS=y
+CONFIG_DEVTMPFS=y
+CONFIG_DEVTMPFS_MOUNT=y
+
+# === Net (for egress bridge per README-1.md:1080) ===
+CONFIG_NET=y
+CONFIG_PACKET=y
+CONFIG_UNIX=y
+CONFIG_INET=y
+CONFIG_IP_MULTICAST=y
+CONFIG_NETFILTER=y
+CONFIG_INET_UDP=y
+CONFIG_INET_TCP=y
+
+# === Serial / Console (QEMU -nographic per README-1.md:538) ===
+CONFIG_TTY=y
+CONFIG_VT=y
+CONFIG_CONSOLE_TRANSLATIONS=y
+CONFIG_VT_CONSOLE=y
+CONFIG_HW_CONSOLE=y
+CONFIG_SERIAL_8250=y
+CONFIG_SERIAL_8250_CONSOLE=y
+CONFIG_SERIAL_8250_PCI=y
+CONFIG_SERIAL_EARLYCON=y
+CONFIG_PRINTK=y
+CONFIG_EARLY_PRINTK=y
+
+# === TTY / PTY (for shell prompt per README-1.md:548) ===
+CONFIG_UNIX98_PTYS=y
+CONFIG_LEGACY_PTYS=y
+CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+
+# === Input (PS/2 via input.js per README-1.md:1221) ===
+CONFIG_INPUT=y
+CONFIG_INPUT_KEYBOARD=y
+CONFIG_KEYBOARD_ATKBD=y
+CONFIG_INPUT_MOUSE=y
+CONFIG_MOUSE_PS2=y
+
+# === VGA / Console (v86 VGA per README-1.md:2373) ===
+CONFIG_VGA_CONSOLE=y
+CONFIG_DRM=y
+CONFIG_FB=y
+CONFIG_FB_VESA=y
+
+# === Misc required ===
+CONFIG_BINFMT_ELF=y
+CONFIG_BINFMT_SCRIPT=y
+CONFIG_SHMEM=y
+CONFIG_ANON_INODES=y
+CONFIG_EPOLL=y
+CONFIG_SIGNALFD=y
+CONFIG_TIMERFD=y
+CONFIG_EVENTFD=y
+CONFIG_AIO=y
+CONFIG_FUTEX=y
+
+# === Debug (minimal for dev) ===
+CONFIG_MAGIC_SYSRQ=y
+CONFIG_DEBUG_KERNEL=y
+CONFIG_DETECT_HUNG_TASK=y
+
+# === Security (minimal) ===
+CONFIG_SECURITY=y
+CONFIG_SECURITYFS=y
+
+# === Invariants guard ===
+# Do NOT disable: VIRTIO_9P, 9P_FS, NET_9P_VIRTIO (breaks host9p boot per README-1.md:1328)
+# Do NOT change: VIRTIO_BLK (hda) / VIRTIO_NET (egress bridge) without updating v86 config per README-1.md:1337
+
+# === Verify ===
+# After build: qemu-system-x86_64 -kernel src/kernel/bzImage -initrd src/kernel/initramfs-minimal/initramfs-minimal.cpio -serial stdio -nographic -m 256M
+# Expect: mount -t proc, shell prompt per README-1.md:548
+# If fails, do NOT debug v86/WASM/OPFS - kernel/config issue per README-1.md:552

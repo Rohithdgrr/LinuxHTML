@@ -1,0 +1,16 @@
+{
+  "name": "devbox",
+  "tier": "base",
+  "description": "LinuxHTML DevBox example per README-1.md:2421 - validates gcc git python3 vim (Standard adds Node.js)",
+  "rootfs_overlay": "overlay/",
+  "boot_args": [
+    "root=host9p",
+    "rootfstype=9p",
+    "rootflags=trans=virtio"
+  ],
+  "ui": {
+    "terminal_theme": "default",
+    "resolution": "1024x768"
+  },
+  "note": "Downstream projects extend via profile + overlay per README-1.md:2164, do not fork src/"
+}

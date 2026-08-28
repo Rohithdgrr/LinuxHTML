@@ -1,0 +1,65 @@
+# .github/workflows/release.yml - Release CI per README-1.md:1760
+# Runs all PR tests + Chromium/Firefox/WebKit + full storage/network + fuzz review + benchmark + manifest + signature + PWA + single-file + publication
+name: Release
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install -r requirements.txt && npx playwright install --with-deps
+      - name: Verify versions strict
+        run: python3 tools/verify_versions.py --strict
+      - name: Run all PR tests
+        run: |
+          python3 tools/verify_versions.py
+          ./src/kernel/build.sh
+          ./src/kernel/initramfs-minimal/build.sh
+          python3 tools/qemugate_check.py --strict
+          ./src/rootfs/build.sh --tier base
+          python3 tools/qemugate_real_check.py --tier base --strict
+          ./src/emulator/build.sh
+          python3 tools/pack.py --tier base --target pwa
+          python3 tools/pack.py --tier base --target single-file
+          python3 tools/check_size.py
+      - name: Run all three browsers
+        run: python3 -m pytest tools/test/test_cross_browser.py -v
+      - name: Full storage tests
+        run: python3 -m pytest tools/test/test_storage.py tools/test/test_storage_worker.py -v
+      - name: Network tests
+        run: python3 -m pytest tools/test/test_network.py -v
+      - name: Fuzzing results review
+        run: python3 tools/fuzz/run_fuzz.py --iterations 10000
+      - name: Benchmark suite
+        run: python3 tools/bench/run.py
+      - name: Generate manifest
+        run: python3 tools/pack.py --tier base --target pwa && ls -lh build/manifest*.json
+      - name: Sign manifest
+        run: python3 tools/sign_manifest.py --manifest build/manifest-base.json
+      - name: Verify manifest signature
+        run: python3 tools/verify_manifest.py --manifest build/manifest-base.json
+      - name: PWA packaging
+        run: ls -lh build/pwa/
+      - name: Single-file packaging
+        run: ls -lh build/linuxhtml.html
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/pwa/**
+            build/linuxhtml.html
+            build/manifest*.json
+            build/manifest*.json.sig
+            build/manifests/sbom*.json
+            docs/BENCHMARKS.md

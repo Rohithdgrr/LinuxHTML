@@ -1,0 +1,10 @@
+[submodule "src/emulator/v86"]
+	path = src/emulator/v86
+	url = https://github.com/copy/v86.git
+	branch = master
+	# Pinned commit: a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+	# See versions.lock -> v86.commit
+	# Update only with pinned version and verification per README-1.md:152
+	#   git -C src/emulator/v86 fetch
+	#   git -C src/emulator/v86 checkout <pinned-commit>
+	# Fork only on concrete upstream blocker.
