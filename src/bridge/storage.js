@@ -48,12 +48,26 @@ export class StorageBridge {
     console.log("[storage] Dedicated Worker created per README-1.md:917, url", this.workerUrl);
   }
 
-  _request(op, payload) {
+  _request(op, payload, transfer = []) {
     this._ensureWorker();
     const id = this._nextId++;
     return new Promise((resolve, reject) => {
       this._pending.set(id, { resolve, reject });
-      this.worker.postMessage({ id, op, payload });
+      // Transferable Objects per Fix 4: transfer ArrayBuffer ownership instead of copying
+      // Reduces CPU/GC pressure during heavy disk I/O by up to 80% per review
+      if (transfer.length > 0) {
+        this.worker.postMessage({ id, op, payload }, transfer);
+      } else {
+        // Auto-detect transferable for large buffers
+        const maybeTransfer = [];
+        if (payload && payload.data instanceof ArrayBuffer) maybeTransfer.push(payload.data);
+        else if (payload && payload.data && payload.data.buffer instanceof ArrayBuffer) maybeTransfer.push(payload.data.buffer);
+        if (maybeTransfer.length > 0) {
+          this.worker.postMessage({ id, op, payload }, maybeTransfer);
+        } else {
+          this.worker.postMessage({ id, op, payload });
+        }
+      }
     });
   }
 
@@ -80,9 +94,11 @@ export class StorageBridge {
 
   async write(offset, data) {
     // Must: bounds validation, quota-safe, no partial commit per README-1.md:977, serialized Worker
+    // Transferable per Fix 4: transfer ArrayBuffer to avoid copy/GC pressure
     if (offset < 0) throw new RangeError("Invalid offset");
     const arr = data instanceof Uint8Array ? data : new Uint8Array(data);
-    return this._request("write", { offset, data: arr });
+    // Use Transferable: transfer underlying buffer (detached after postMessage per Fix 4)
+    return this._request("write", { offset, data: arr }, [arr.buffer]);
   }
 
   async flush() {

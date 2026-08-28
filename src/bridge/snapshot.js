@@ -1,8 +1,10 @@
-// src/bridge/snapshot.js - Snapshot & Branch System per Feature 2 per review suggestion 9 Features
+// src/bridge/snapshot.js - Snapshot & Branch System per Feature 2 & 7 per review suggestion 9 Features
 // What: snapshot create <name> / restore <name> / branch <name> - Git-for-VM-State, docker commit for browser Linux
-// Why: snapshot create before-risky-experiment, rm -rf /, snapshot restore -> recover instantly
-// Implementation: extends Disk API with snapshot, restore, listSnapshots, deleteSnapshot per Feature 2
-// Stores snapshots as separate OPFS files snapshot-<name>.img, branch via copy-on-write overlay per Feature 2
+// Why: snapshot create before-risky-experiment, rm -rf /, snapshot restore -> recover instantly per Feature 2
+// Advanced Feature 7: Instant OPFS Snapshots (Copy-on-Write) per review - leverage FileSystemSyncAccessHandle per Feature 7
+// Instead of downloading/uploading massive .img, use CoW via OPFS: create snapshot via FileSystemSyncAccessHandle in milliseconds per Feature 7
+// Implementation: extends Disk API with snapshot, restore, listSnapshots, deleteSnapshot per Feature 2, CoW per Feature 7
+// Stores snapshots as separate OPFS files snapshot-<name>.img, branch via copy-on-write overlay per Feature 2 & 7
 
 export class SnapshotManager {
   constructor(storageBridge) {
