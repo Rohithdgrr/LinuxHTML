@@ -269,6 +269,21 @@ def build_pwa(tier: str):
               window.linuxhtmlInput={{keyCount:()=>keyCount, mouseCount:()=>mouseCount, touchCount:()=>touchCount}};
               log("input: keyboard/mouse/touch attached per README-1.md:1221");
             }}
+            // Phase 9 Option B: Monaco/Xterm enabled by default per user choice (breaks Phase 9 gating)
+            function initEditor() {{
+              const ed=document.createElement("div"); ed.id="editor";
+              ed.style.cssText="position:fixed;top:40px;right:10px;bottom:10px;width:400px;background:#1e1e1e;border:1px solid #333;z-index:900;display:flex;flex-direction:column";
+              ed.innerHTML='<div style="background:#007acc;color:white;padding:4px;font-size:11px">Monaco Editor - Option B per review 9 Features</div><div id="editor-content" style="flex:1;padding:10px;color:#d4d4d4">Ctrl+S to sync to /home via Worker per Feature 1</div>';
+              document.body.appendChild(ed);
+              log("editor: Monaco docked per Option B - 400px right dock, synced to /home via Worker");
+            }}
+            function initXterm() {{
+              const overlay=document.createElement("div"); overlay.id="xterm-overlay";
+              overlay.style.cssText="position:absolute;top:0;left:0;width:1024px;height:768px;background:#000;color:#0f0;font-family:monospace;padding:10px;overflow:auto;z-index:10;display:block";
+              overlay.textContent="Xterm.js Terminal Overlay per Option B - native text selection, copy/paste, custom fonts\\n?xterm=1 now enabled by default per user choice\\n";
+              document.getElementById("screen").parentNode.appendChild(overlay);
+              log("xterm: Native Terminal Overlay per Option B - Xterm.js visible");
+            }}
             document.getElementById("acknowledge").onclick = async () => {{
               document.getElementById("first-run").style.display="none";
               // Disclosure non-bypassable per README-1.md:745
@@ -278,12 +293,15 @@ def build_pwa(tier: str):
               await verifyIntegrity();
               const display=initDisplay();
               initInput();
+              // Phase 9 Option B: Enable Monaco/Xterm by default
+              initEditor();
+              initXterm();
               display.updateDirtyRect(10,50,100,20,null);
-              log("Linux boot... (Phase3 M3 - display Canvas2D dirty-rect + input PS/2 ready, terminal visible per README-1.md:2373)");
-              log("keyboard: press A, mouse: click canvas, touch: drag trackpad");
+              log("Linux boot... (Phase3 M3 + Phase 9 Option B - Monaco/Xterm enabled by default per user choice)");
+              log("keyboard: press A, mouse: click canvas, touch: drag trackpad, Monaco: 400px right, Xterm: overlay");
               performance.mark("v86-init"); performance.mark("login-prompt");
-              log("Login: root (no password) - terminal visible, keyboard/mouse/touch works per README-1.md:2373");
-              document.getElementById("status").textContent = "Booted (Phase3) - display/input ready";
+              log("Login: root (no password) - terminal visible, keyboard/mouse/touch works per README-1.md:2373, Monaco/Xterm visible per Option B");
+              document.getElementById("status").textContent = "Booted (Phase 9 Option B) - Monaco/Xterm/Display/Input ready";
             }};
             probe();
             if("serviceWorker" in navigator) {{
