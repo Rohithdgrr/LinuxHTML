@@ -1,0 +1,11 @@
+{
+  "name": "node-react",
+  "tier": "standard",
+  "description": "Node React per Feature 3 - One-Click Environment",
+  "rootfs_overlay": "overlay/",
+  "packages": ["nodejs", "npm", "yarn"],
+  "boot_args": ["root=host9p","rootfstype=9p","rootflags=trans=virtio"],
+  "ui": { "terminal_theme": "default", "editor": "monaco", "welcome_banner": "Node React DevBox - Feature 3" },
+  "env": { "NODE_ENV": "development", "EDITOR": "vim" },
+  "note": "One of 5 pre-built DevBox profiles per Feature 3 - use ?profile=node-react"
+}

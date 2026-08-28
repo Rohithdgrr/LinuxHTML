@@ -1,0 +1,57 @@
+# .github/workflows/pages.yml - GitHub Pages deployment per suggestion 9
+# Publishes PWA build to GitHub Pages with correct COOP/COEP headers
+name: Pages
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build PWA
+        run: |
+          python3 tools/pack.py --tier base --target pwa
+          ls -lh build/pwa/
+          cat build/manifest-base.json | head -20
+      - name: Add headers for COOP/COEP
+        run: |
+          cat > build/pwa/_headers << 'EOF'
+          /*
+            Cross-Origin-Opener-Policy: same-origin
+            Cross-Origin-Embedder-Policy: require-corp
+            Cross-Origin-Resource-Policy: same-origin
+          EOF
+          cat build/pwa/_headers
+          # For GitHub Pages, also add _headers for Cloudflare Pages compatibility
+          cp build/pwa/_headers build/pwa/_headers.cloud
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "build/pwa"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

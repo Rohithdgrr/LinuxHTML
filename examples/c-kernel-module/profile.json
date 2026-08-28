@@ -1,0 +1,11 @@
+{
+  "name": "c-kernel-module",
+  "tier": "base",
+  "description": "C kernel module per Feature 3 - One-Click Environment",
+  "rootfs_overlay": "overlay/",
+  "packages": ["gcc", "make", "linux-headers"],
+  "boot_args": ["root=host9p","rootfstype=9p","rootflags=trans=virtio"],
+  "ui": { "terminal_theme": "default", "editor": "monaco", "welcome_banner": "C Kernel Module DevBox - Feature 3" },
+  "env": { "KDIR": "/usr/src/linux", "EDITOR": "vim" },
+  "note": "One of 5 pre-built DevBox profiles per Feature 3 - use ?profile=c-kernel-module"
+}

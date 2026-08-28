@@ -1,0 +1,11 @@
+{
+  "name": "python-dev",
+  "tier": "base",
+  "description": "Python dev per Feature 3 per review suggestion 9 Features - One-Click Environment",
+  "rootfs_overlay": "overlay/",
+  "packages": ["python3", "pip", "black", "flake8"],
+  "boot_args": ["root=host9p","rootfstype=9p","rootflags=trans=virtio"],
+  "ui": { "terminal_theme": "default", "editor": "monaco", "welcome_banner": "Python DevBox - Feature 3" },
+  "env": { "PYTHONPATH": "/home/user", "EDITOR": "vim" },
+  "note": "One of 5 pre-built DevBox profiles per Feature 3 - use ?profile=python-dev"
+}

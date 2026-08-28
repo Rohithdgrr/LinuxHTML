@@ -1,0 +1,11 @@
+{
+  "name": "rust-embedded",
+  "tier": "base",
+  "description": "Rust embedded per Feature 3 - One-Click Environment",
+  "rootfs_overlay": "overlay/",
+  "packages": ["rust", "cargo", "gcc"],
+  "boot_args": ["root=host9p","rootfstype=9p","rootflags=trans=virtio"],
+  "ui": { "terminal_theme": "default", "editor": "monaco", "welcome_banner": "Rust Embedded DevBox - Feature 3" },
+  "env": { "CARGO_HOME": "/home/user/.cargo", "EDITOR": "vim" },
+  "note": "One of 5 pre-built DevBox profiles per Feature 3 - use ?profile=rust-embedded"
+}

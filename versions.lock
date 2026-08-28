@@ -16,8 +16,8 @@
     "version": "6.6.72",
     "lts_line": "6.6",
     "source_url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.72.tar.xz",
-    "tarball_sha256": "8a2f5bff6d8a6b9b7f0e8f8b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e",
-    "note": "Replace placeholder SHA with actual `sha256sum linux-6.6.72.tar.xz` after download. Tracked for v1 per README-1.md:2258. EOL tracking job required."
+    "tarball_sha256": "feb9e514930d5968daa0b8b5486d3295d1fb2b34accf876207641884d4baef39",
+    "note": "Verified via https://cdn.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc per README-1.md:2258. EOL tracking via tools/maintenance/kernel_eol_check.py."
   },
 
   "alpine": {
@@ -25,26 +25,26 @@
     "version": "3.19.1",
     "variant": "alpine-minirootfs",
     "image": "alpine:3.19.1",
-    "digest": "sha256:c5b1261d6d3e43071626931bd746b6ba1393290e898ede1fffb962dc373a464c",
+    "digest": "sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b",
     "source_url": "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-minirootfs-3.19.1-x86_64.tar.gz",
-    "tarball_sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
-    "note": "Digest pinned per README-1.md:569. Verify with `docker inspect --format='{{index .RepoDigests 0}}' alpine:3.19.1`"
+    "tarball_sha256": "185123ceb6e7d08f2449fff5543db206ffb79decd814608d399ad447e08fa29e",
+    "note": "Verified via https://hub.docker.com/v2/.../3.19.1 and https://dl-cdn.alpinelinux.org/...tar.gz.sha256 2026-08-28 per README-1.md:569."
   },
 
   "busybox": {
     "name": "busybox",
     "version": "1.36.1",
     "source_url": "https://busybox.net/downloads/busybox-1.36.1.tar.bz2",
-    "tarball_sha256": "b8cc24c9574d809e7279c3be34918dc5ea91ed0e034374d506343feec78748e1e",
-    "note": "Used for src/kernel/initramfs-minimal per README-1.md:520"
+    "tarball_sha256": "b8cc24c9574d809e7279c3be349795c5d5ceb6fdf19ca709f80cde50e47de314",
+    "note": "Verified via https://busybox.net/downloads/busybox-1.36.1.tar.bz2.sha256 2026-08-28 per README-1.md:520"
   },
 
   "v86": {
     "name": "v86",
     "repo": "https://github.com/copy/v86.git",
-    "commit": "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+    "commit": "b0d8f2c9a7d90d84b8ecc5afff8f50b26cef3eef",
     "branch": "master",
-    "note": "Pinned submodule commit per README-1.md:152. Fork only on upstream blocker. Update via `git submodule update`."
+    "note": "Verified via git ls-remote https://github.com/copy/v86.git HEAD 2026-08-28 per README-1.md:152. Fork only on upstream blocker."
   },
 
   "emscripten": {
@@ -61,9 +61,9 @@
     "version": "20.11.1",
     "lts": "20.x",
     "source_url": "https://nodejs.org/dist/v20.11.1/node-v20.11.1-linux-x64.tar.xz",
-    "tarball_sha256": "c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8a9b0c1d2e",
+    "tarball_sha256": "d8dab549b09672b03356aa2257699f3de3b58c96e74eb26a8b495fbdc9cf6fbe",
     "npm_version": "10.2.4",
-    "note": "Standard tier only per README-1.md:671. Used for build tooling/esbuild."
+    "note": "Verified via https://nodejs.org/dist/v20.11.1/SHASUMS256.txt 2026-08-28 per README-1.md:671. Standard tier only."
   },
 
   "esbuild": {

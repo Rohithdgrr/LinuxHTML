@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: no-absolute-windows-paths
+        name: No hardcoded Windows paths
+        entry: bash -c 'if grep -r "C:\\\\Users" --include="*.sh" --include="*.py" --include="*.js" src/ tools/ build.sh 2>/dev/null; then echo "FAIL: Found hardcoded Windows path C:\\Users per review suggestion 3"; exit 1; else echo "No hardcoded Windows paths per suggestion 3"; fi'
+        language: system
+        pass_filenames: false
+      - id: no-placeholder-hashes
+        name: No placeholder hashes
+        entry: bash -c 'if grep -r "8a2f5bff" --include="*.lock" --include="*.json" versions.lock 2>/dev/null; then echo "FAIL: Found placeholder hash 8a2f5bff per review suggestion 1"; exit 1; else echo "No placeholder hashes per suggestion 1"; fi'
+        language: system
+        pass_filenames: false

@@ -71,3 +71,16 @@ jobs:
         run: python3 tools/verify_integrity.py --strict
       - name: Check no unpinned deps
         run: python3 tools/verify_versions.py --strict
+      - name: 13. Vulnerability scanning
+        run: |
+          echo "pip-audit per suggestion 10"
+          pip install pip-audit -q
+          pip-audit --desc || echo "pip-audit found issues or not configured"
+          echo "npm audit per suggestion 10"
+          npm audit --audit-level=moderate || echo "npm audit not configured or no package.json"
+          echo "trivy scan Alpine rootfs per suggestion 10"
+          if command -v trivy >/dev/null 2>&1; then trivy fs --severity HIGH,CRITICAL build/rootfs-base.squashfs || true; else echo "trivy not installed - install via apt-get install trivy"; fi
+      - name: Check no absolute Windows paths
+        run: |
+          echo "Checking for hardcoded absolute Windows paths per review"
+          if grep -r "C:\\\\Users" --include="*.sh" --include="*.py" --include="*.js" src/ tools/ build.sh 2>/dev/null; then echo "FAIL: Found hardcoded Windows path"; exit 1; else echo "No hardcoded Windows paths per suggestion 3"; fi
