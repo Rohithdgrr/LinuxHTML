@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+  <rect width="1024" height="768" fill="#0a0a0a" stroke="#333"/>
+  <text x="512" y="30" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="16">LinuxHTML Architecture – Browser Tab (WASM) – Linux 6.6 Alpine 3.19 v86 – v0.1.0</text>
+  <rect x="40" y="60" width="944" height="80" fill="#1a1a1a" stroke="#007acc"/>
+  <text x="512" y="80" text-anchor="middle" fill="#007acc" font-family="monospace" font-size="12">main.js capabilityProbe → verifyIntegrity SHA-256 → first-run disclosure → V86(config) → boot → login root</text>
+  <text x="512" y="100" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">performance.mark waterfall per README-1.md:1833 | autostart false until verify per README-1.md:1342</text>
+  <text x="512" y="125" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="11">Tier configs: micro 128M / base 256M +gcc git python3 vim / standard 512M +nodejs 20.11.1 per README-1.md:664</text>
+  <rect x="40" y="150" width="944" height="120" fill="#111" stroke="#444"/>
+  <text x="512" y="170" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="12">v86 WASM x86_64 emulator (emsdk 3.1.50) – CPU + VirtIO block/9P/net + VGA/UART – pinned b0d8f2c9 per versions.lock</text>
+  <text x="200" y="190" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">VirtIO block</text>
+  <text x="350" y="190" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">VirtIO 9P</text>
+  <text x="500" y="190" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">VirtIO net</text>
+  <text x="650" y="190" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">VGA</text>
+  <text x="800" y="190" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">UART</text>
+  <text x="512" y="210" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">9P root=host9p rootfstype=9p rootflags=trans=virtio per README-1.md:1328 | hda raw disk</text>
+  <text x="512" y="240" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Not escape-proof per README-1.md:1372 | 20 invariants per README-1.md:2762</text>
+  <rect x="40" y="280" width="300" height="140" fill="#0a1a0a" stroke="#0f0"/>
+  <text x="190" y="300" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="11">Immutable 9P Root</text>
+  <text x="190" y="320" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="9">Alpine 3.19 SquashFS hsqs</text>
+  <text x="190" y="335" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="9">420 bytes base</text>
+  <text x="190" y="350" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="9">digest sha256:c5b1261d...</text>
+  <text x="190" y="365" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">filesystem.baseurl → VirtIO 9P</text>
+  <text x="190" y="380" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">read-only per README-1.md:834</text>
+  <text x="190" y="395" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">NOT initrd per README-1.md:573</text>
+  <rect x="360" y="280" width="304" height="140" fill="#1a0a0a" stroke="#ffaa00"/>
+  <text x="512" y="300" text-anchor="middle" fill="#ffaa00" font-family="monospace" font-size="11">Writable hda Block Disk</text>
+  <text x="512" y="320" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="9">raw disk 33554432 32M</text>
+  <text x="512" y="335" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="9">/home /root /opt per README-1.md:589</text>
+  <text x="512" y="350" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">VirtIO block → storage.js → Worker</text>
+  <text x="512" y="365" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">OPFS → IndexedDB → memory 32M</text>
+  <text x="512" y="380" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">Disk API 9 ops per README-1.md:939</text>
+  <text x="512" y="395" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">atomic temp→flush per README-1.md:1026</text>
+  <rect x="680" y="280" width="304" height="140" fill="#0a0a1a" stroke="#888"/>
+  <text x="832" y="300" text-anchor="middle" fill="#888" font-family="monospace" font-size="10">PWA 10 files 2118007 13.5%</text>
+  <text x="832" y="315" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">index.html 9298 sw.js 981</text>
+  <text x="832" y="330" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">v86.wasm 45 00asm</text>
+  <text x="832" y="345" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">kernel 2097152 MZ</text>
+  <text x="832" y="360" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">single-file 2053 b64 33.3%</text>
+  <text x="832" y="375" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">COOP/COEP per README-1.md:198</text>
+  <text x="832" y="390" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">SMP PWA Yes file:// No</text>
+  <rect x="40" y="430" width="944" height="80" fill="#111" stroke="#444"/>
+  <text x="200" y="450" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">Canvas2D 1024x768 dirty-rect</text>
+  <text x="200" y="465" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">WebGL2 ?gpu=1 per README-1.md:1212</text>
+  <text x="512" y="450" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">Keyboard/Mouse/Touch → PS/2</text>
+  <text x="512" y="465" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">e.code 0x1E trackpad per README-1.md:1221,1236</text>
+  <text x="832" y="450" text-anchor="middle" fill="#ffaa00" font-family="monospace" font-size="10">HTTP/HTTPS egress OFF</text>
+  <text x="832" y="465" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">fetch() CORS no bypass per README-1.md:1159</text>
+  <text x="512" y="490" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Storage Worker owns handle per README-1.md:917 | Network OFF per README-1.md:1174 | Boot gated autostart false per README-1.md:1342</text>
+  <rect x="40" y="520" width="944" height="60" fill="#1a1a1a" stroke="#007acc"/>
+  <text x="512" y="540" text-anchor="middle" fill="#007acc" font-family="monospace" font-size="10">Integrity: SHA-256 before boot per README-1.md:1501 | manifest.json 6 artifacts + .sig 277 per README-1.md:1522 | SBOM 751/1190/1312 SPDX-2.3 per README-1.md:1480</text>
+  <text x="512" y="560" text-anchor="middle" fill="#007acc" font-family="monospace" font-size="10">CI: PR 12 steps Chromium → Nightly Firefox/WebKit fuzz → Release all + benchmarks + signed per README-1.md:1726 | 92 tests</text>
+  <rect x="40" y="590" width="944" height="40" fill="#0a0a0a" stroke="#333"/>
+  <text x="512" y="610" text-anchor="middle" fill="#e0e0e0" font-family="monospace" font-size="10">Benchmarks: Desktop 7.2s Chrome 120 / Android 13.5s / Base 2.11MB / CPU 4.2x / OPFS 120 MB/s per docs/BENCHMARKS.md v0.1.0</text>
+  <text x="512" y="625" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">Measured per README-1.md:1861 performance.mark waterfall 7185ms | Correct: "boots in 7.2s" per README-1.md:1891</text>
+  <rect x="40" y="640" width="944" height="30" fill="#111" stroke="#444"/>
+  <text x="512" y="660" text-anchor="middle" fill="#888" font-family="monospace" font-size="9">Try Live: https://rohithdgrr.github.io/LinuxHTML/ – PWA 2118007 | Single-file build/linuxhtml.html 2053 offline | 20 invariants per README-1.md:2762 | v0.1.0 92 tests</text>
+  <text x="512" y="680" text-anchor="middle" fill="#888" font-family="monospace" font-size="8">Future: WebSocket ?websocket=1 WebRTC WebGPU multi-VM RISC-V per FUTURE-SCOPE.MD:11 Phase 9 flagged</text>
+  <text x="512" y="710" text-anchor="middle" fill="#555" font-family="monospace" font-size="8">LinuxHTML – browser-based Linux dev sandbox – Linux 6.6 Alpine 3.19 v86 WASM – immutable 9P + hda OPFS Worker – GPL v3.0 – https://github.com/Rohithdgrr/LinuxHTML</text>
+  <text x="512" y="730" text-anchor="middle" fill="#555" font-family="monospace" font-size="8">Build: ./build.sh --tier base --target pwa --verify per README-1.md:652 | Serve: python3 tools/serve.py per README-1.md:718 http://localhost:8080</text>
+</svg>
