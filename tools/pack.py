@@ -113,6 +113,36 @@ def build_pwa(tier: str):
     print(f"  wrote disk seed {tier} (tiny, not full {ROOT / f'build/disk-{tier}.img'} raw which is for QEMU)")
     hashes["disk"] = hashlib.sha256((ASSETS_DIR / f"disk-{tier}.img").read_bytes()).hexdigest()
 
+    # Copy UI JS modules so the generated PWA uses the REAL editor/xterm (not inline fakes).
+    # The modules import each other via relative paths, so they must live in the same dir.
+    ui_js = {
+        "vendor-loader.js": ROOT / "src/ui/vendor-loader.js",
+        "editor.js": ROOT / "src/ui/editor/editor.js",
+        "xterm.js": ROOT / "src/ui/xterm/xterm.js",
+    }
+    js_dir = ASSETS_DIR / "js"
+    ensure_dir(js_dir)
+    for name, srcp in ui_js.items():
+        if srcp.exists():
+            content = srcp.read_text(encoding="utf-8")
+            # Fix import paths: source tree has editor.js in src/ui/editor/ and
+            # xterm.js in src/ui/xterm/, so they import ../vendor-loader.js.
+            # But in the build output all three land in the same assets/js/ dir,
+            # so the relative path must be ./vendor-loader.js.
+            if name != "vendor-loader.js":
+                content = content.replace(
+                    'from "../vendor-loader.js"',
+                    'from "./vendor-loader.js"',
+                )
+                content = content.replace(
+                    "from '../vendor-loader.js'",
+                    "from './vendor-loader.js'",
+                )
+            (js_dir / name).write_text(content, encoding="utf-8")
+            print(f"  packed UI module {name}")
+        else:
+            eprint(f"WARN: UI module missing: {srcp}")
+
     # Create manifest.webmanifest (PWA)
     manifest = {
         "name": "LinuxHTML",
@@ -176,14 +206,45 @@ def build_pwa(tier: str):
             #main-layout {{ flex:1; display:flex; gap:16px; padding:16px; max-width:1600px; width:100%; margin:0 auto; align-items:flex-start; min-height:0; }}
             #screen-wrapper {{ flex:1; display:flex; flex-direction:column; align-items:center; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); min-height:0; }}
             #screen {{ width:1024px; max-width:100%; height:768px; background:#000; border:1px solid #212529; border-radius:4px; display:block; flex-shrink:0; }}
-            #editor-panel {{ width:380px; flex-shrink:0; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); align-self:stretch; max-height:800px; }}
+            #editor-panel {{ width:420px; min-width:280px; flex-shrink:0; background:#1e1e1e; border:1px solid #333; border-radius:8px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.25); align-self:stretch; transition:width 0.2s ease; position:relative; }}
+            #editor-panel .editor-header {{ background:#2d2d2d; color:#cccccc; padding:0; font-size:12px; display:flex; flex-direction:column; border-bottom:1px solid #333; flex-shrink:0; }}
+            #editor-panel .editor-title-bar {{ display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border-bottom:1px solid #383838; }}
+            #editor-panel .editor-title-bar .title {{ font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#888; display:flex; align-items:center; gap:6px; }}
+            #editor-panel .editor-title-bar .title::before {{ content:''; display:inline-block; width:12px; height:12px; background:#007acc; border-radius:2px; }}
+            #editor-panel .editor-title-bar .close-btn {{ background:none; border:none; color:#888; padding:2px 6px; border-radius:3px; cursor:pointer; font-size:14px; line-height:1; transition:all 0.15s; }}
+            #editor-panel .editor-title-bar .close-btn:hover {{ background:#3c3c3c; color:#fff; }}
+            #editor-panel .editor-toolbar {{ display:flex; align-items:center; gap:2px; padding:4px 10px; background:#252526; border-bottom:1px solid #333; }}
+            #editor-panel .editor-toolbar button {{ background:none; border:none; color:#858585; padding:4px 6px; border-radius:3px; cursor:pointer; font-size:11px; display:flex; align-items:center; gap:4px; transition:all 0.15s; white-space:nowrap; }}
+            #editor-panel .editor-toolbar button:hover {{ background:#3c3c3c; color:#fff; }}
+            #editor-panel .editor-toolbar button.active {{ background:#094771; color:#fff; }}
+            #editor-panel .editor-toolbar .separator {{ width:1px; height:16px; background:#3c3c3c; margin:0 4px; }}
+            #editor-panel .editor-file-bar {{ display:flex; align-items:center; padding:4px 10px 6px; gap:6px; background:#1e1e1e; border-top:1px solid #333; }}
+            #editor-panel .editor-file-bar .file-icon {{ color:#888; font-size:11px; }}
+            #editor-panel .editor-file-bar .file-path {{ color:#ccc; font-size:12px; font-family:Consolas,Monaco,"Courier New",monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+            #editor-panel .editor-file-bar .dirty-dot {{ width:8px; height:8px; border-radius:50%; background:#e8e840; display:none; flex-shrink:0; transition:opacity 0.2s; }}
+            #editor-panel .editor-file-bar .dirty-dot.visible {{ display:block; }}
+            #editor-panel #editor-content {{ flex:1; min-height:0; overflow:hidden; padding:0; background:#1e1e1e; }}
+            #editor-panel .editor-footer {{ padding:6px 10px; background:#007acc; font-size:11px; color:rgba(255,255,255,0.85); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }}
+            #editor-panel .editor-footer .shortcut {{ background:rgba(255,255,255,0.15); padding:1px 5px; border-radius:3px; font-family:Consolas,Monaco,"Courier New",monospace; font-size:10px; margin-left:3px; }}
+            #editor-panel .editor-footer .save-feedback {{ color:#4ec9b0; font-weight:500; }}
+            #editor-panel .editor-loading {{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#1e1e1e; color:#888; font-size:13px; font-family:Consolas,monospace; z-index:1; }}
+            #editor-panel .editor-loading .spinner {{ width:18px; height:18px; border:2px solid #333; border-top-color:#007acc; border-radius:50%; animation:editor-spin 0.8s linear infinite; margin-right:10px; }}
+            @keyframes editor-spin {{ to {{ transform:rotate(360deg); }} }}
+            #editor-panel .editor-explorer {{ background:#252526; border-top:1px solid #333; padding:8px 0; max-height:150px; overflow-y:auto; flex-shrink:0; }}
+            #editor-panel .editor-explorer .explorer-header {{ padding:4px 10px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#888; font-weight:600; }}
+            #editor-panel .editor-explorer .explorer-item {{ padding:4px 10px 4px 20px; font-size:12px; color:#ccc; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background 0.1s; }}
+            #editor-panel .editor-explorer .explorer-item:hover {{ background:#37373d; }}
+            #editor-panel .editor-explorer .explorer-item.active {{ background:#094771; color:#fff; }}
+            #editor-panel .editor-explorer .explorer-item .icon {{ color:#888; font-size:10px; }}
             #first-run {{ max-width:680px; margin:32px auto; padding:24px; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.06); }}
             #first-run h2 {{ margin:0 0 12px; color:#212529; font-size:18px; }}
             #first-run p {{ margin:8px 0; color:#495057; font-size:13px; line-height:1.5; }}
             #first-run button {{ margin-top:16px; padding:10px 24px; background:#007acc; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }}
             #first-run button:hover {{ background:#0066aa; }}
             #log {{ max-width:1600px; width:100%; margin:8px auto; padding:12px 16px; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; font-size:11px; color:#6c757d; white-space:pre-wrap; max-height:200px; overflow-y:auto; box-shadow:0 1px 3px rgba(0,0,0,0.05); }}
-            @media (max-width: 1400px) {{ #main-layout {{ flex-direction:column; }} #editor-panel {{ width:100%; max-height:300px; }} #screen {{ width:100%; height:auto; aspect-ratio:1024/768; }} }}
+            @media (max-width: 1400px) {{ #main-layout {{ flex-direction:column; }} #editor-panel {{ width:100%; min-width:0; max-height:45vh; }} #screen {{ width:100%; height:auto; aspect-ratio:1024/768; }} }}
+            #editor-panel .resize-handle {{ width:4px; cursor:col-resize; background:transparent; position:absolute; top:0; right:-2px; bottom:0; z-index:10; }}
+            #editor-panel .resize-handle:hover, #editor-panel .resize-handle.active {{ background:#007acc; }}
           </style>
         </head>
         <body>
@@ -194,15 +255,50 @@ def build_pwa(tier: str):
               <canvas id="screen" width="1024" height="768"></canvas>
               <div style="margin-top:10px; font-size:11px; color:#6c757d;">Keyboard • Mouse • Touch Trackpad • PS/2 per README-1.md:1221</div>
             </div>
-            <div id="editor-panel" style="display:none;">
-              <div style="background:#007acc; color:white; padding:8px 12px; font-size:12px; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
-                <span>Monaco Editor - Option B</span>
-                <button onclick="document.getElementById('editor-panel').style.display='none'" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:2px 8px; border-radius:4px; cursor:pointer;">×</button>
+            <div id="editor-panel" style="display:none; position:relative;">
+              <div class="resize-handle" id="editor-resize"></div>
+              <div class="editor-header">
+                <div class="editor-title-bar">
+                  <span class="title">Editor</span>
+                  <button class="close-btn" onclick="document.getElementById('editor-panel').style.display='none'" title="Close editor">×</button>
+                </div>
+                <div class="editor-toolbar" id="editor-toolbar">
+                  <button onclick="window._editorToggleMinimap && window._editorToggleMinimap()" title="Toggle Minimap">
+                    <span>⊞</span> Minimap
+                  </button>
+                  <button onclick="window._editorToggleWordWrap && window._editorToggleWordWrap()" title="Toggle Word Wrap">
+                    <span>↩</span> Wrap
+                  </button>
+                  <div class="separator"></div>
+                  <button onclick="window._editorFormat && window._editorFormat()" title="Format Document (Shift+Alt+F)">
+                    <span>{{ }}</span> Format
+                  </button>
+                  <button onclick="window._editorCommandPalette && window._editorCommandPalette()" title="Command Palette (Ctrl+Shift+P)">
+                    <span>⌘</span> Commands
+                  </button>
+                </div>
+                <div class="editor-file-bar">
+                  <span class="file-icon">📄</span>
+                  <span class="file-path" id="editor-file-path">/home/user/README.md</span>
+                  <span class="dirty-dot" id="editor-dirty-dot" title="Unsaved changes"></span>
+                </div>
               </div>
-              <div id="editor-content" style="flex:1; padding:12px; font-family: monospace; font-size:12px; color:#212529; background:#ffffff; overflow:auto;">Ctrl+S to sync to /home via Worker per Feature 1<br><br><span style="color:#6c757d;">// Open file via editor.openFile(\"/home/user/README.md\")</span></div>
-              <div style="padding:8px; background:#f8f9fa; border-top:1px solid #dee2e6; font-size:11px; color:#6c757d; display:flex; gap:8px;">
-                <button onclick="alert('Saved to /home via Worker per Feature 1')" style="flex:1; padding:6px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Save Ctrl+S</button>
-                <button onclick="document.getElementById('editor-panel').style.display='none'" style="padding:6px 12px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">Close</button>
+              <div id="editor-content"></div>
+              <div class="editor-explorer" id="editor-explorer">
+                <div class="explorer-header">Explorer</div>
+                <div class="explorer-item active" onclick="window._editorOpenFile && window._editorOpenFile('/home/user/README.md')">
+                  <span class="icon">📄</span> README.md
+                </div>
+                <div class="explorer-item" onclick="window._editorOpenFile && window._editorOpenFile('/home/user/script.sh')">
+                  <span class="icon">📜</span> script.sh
+                </div>
+                <div class="explorer-item" onclick="window._editorOpenFile && window._editorOpenFile('/home/user/config.json')">
+                  <span class="icon">⚙️</span> config.json
+                </div>
+              </div>
+              <div class="editor-footer">
+                <span id="editor-mode-label">Monaco <span style="opacity:0.6">•</span> Markdown</span>
+                <span><span class="shortcut">Ctrl+S</span> Save <span style="opacity:0.6;margin:0 3px;">│</span> <span class="shortcut">Ctrl+Z</span> Undo</span>
               </div>
             </div>
           </div>
@@ -214,7 +310,25 @@ def build_pwa(tier: str):
             <button id="acknowledge">Acknowledge &amp; Boot →</button>
           </div>
           <div id="log" style="display:none;"></div>
-          <button id="toggle-editor" onclick="const p=document.getElementById('editor-panel'); p.style.display=p.style.display==='none'?'flex':'none'" style="position:fixed; bottom:16px; right:16px; padding:8px 16px; background:#007acc; color:white; border:none; border-radius:6px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15); cursor:pointer; z-index:1000;">Editor</button>
+          <button id="toggle-editor" onclick="const p=document.getElementById('editor-panel'); const show=p.style.display==='none'||!p.style.display; p.style.display=show?'flex':'none'; this.innerHTML=show?'<span style=margin-right:4px;\'>\u2715</span> Close':'<span style=margin-right:4px;\'>\u2328</span> Editor'; this.title=show?'Close editor panel':'Open editor panel';" style="position:fixed; bottom:20px; right:20px; padding:10px 18px; background:linear-gradient(135deg,#007acc,#005f9e); color:white; border:none; border-radius:8px; font-size:13px; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer; z-index:1000; transition:all 0.2s ease; display:flex; align-items:center; gap:4px;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)'" title="Open editor panel">\u2328 Editor</button>
+          <div id="keyboard-help" style="display:none;position:fixed;bottom:70px;right:20px;background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:1001;font-size:12px;color:#ccc;font-family:Consolas,monospace;min-width:220px;">
+            <div style="font-weight:600;margin-bottom:10px;color:#fff;font-size:13px;">⌨ Keyboard Shortcuts</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Save</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Ctrl+S</span></span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Undo</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Ctrl+Z</span></span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Redo</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Ctrl+Y</span></span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Find</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Ctrl+F</span></span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Command</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Ctrl+Shift+P</span></span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Format</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Shift+Alt+F</span></span></div>
+              <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Zoom</span><span><span style="background:#333;padding:2px 6px;border-radius:3px;">Ctrl+Scroll</span></span></div>
+            </div>
+            <div style="margin-top:12px;padding-top:8px;border-top:1px solid #333;font-size:10px;color:#666;text-align:center;">Press ? for help</div>
+          </div>
+          <script>
+            document.getElementById('toggle-editor').addEventListener('mouseenter',()=>{{document.getElementById('keyboard-help').style.display='block';}});
+            document.getElementById('toggle-editor').addEventListener('mouseleave',()=>{{setTimeout(()=>{{if(!document.getElementById('keyboard-help').matches(':hover'))document.getElementById('keyboard-help').style.display='none';}},200);}});
+            document.getElementById('keyboard-help').addEventListener('mouseleave',()=>{{document.getElementById('keyboard-help').style.display='none';}});
+          </script>
           <script type="module">
             // Phase 3 M3 - Display/Input integrated per README-1.md:2373
             // src/bridge/display.js Canvas2D dirty-rect per README-1.md:1200, WebGL2 ?gpu=1 per README-1.md:1212
@@ -295,44 +409,46 @@ def build_pwa(tier: str):
               window.linuxhtmlInput={{keyCount:()=>keyCount, mouseCount:()=>mouseCount, touchCount:()=>touchCount}};
               log("input: keyboard/mouse/touch attached per README-1.md:1221");
             }}
-            // Phase 9 Option B: Monaco/Xterm enabled by default per user choice - Light theme per UI improvement - FIXED to be VISIBLE
-            function initEditor() {{
-              const panel=document.getElementById("editor-panel");
-              if(panel) {{
-                panel.style.display="flex";
-                // Make Monaco content visible with real code and syntax highlighting simulation
-                const content=document.getElementById("editor-content");
-                if(content) {{
-                  content.innerHTML='<div style="display:flex; font-family:monospace; font-size:12px; line-height:1.6;">'
-                    +'<div style="color:#6c757d; text-align:right; padding-right:10px; user-select:none; border-right:1px solid #dee2e6; margin-right:10px;">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8</div>'
-                    +'<div style="color:#212529;"><span style="color:#d73a49;">#include</span> <span style="color:#032f62;">&lt;stdio.h&gt;</span><br>'
-                    +'<span style="color:#d73a49;">int</span> <span style="color:#6f42c1;">main</span>() {{ <br>'
-                    +'&nbsp;&nbsp;<span style="color:#032f62;">printf</span>(<span style="color:#032f62;">"Hello LinuxHTML"</span>);<br>'
-                    +'&nbsp;&nbsp;<span style="color:#d73a49;">return</span> 0;<br>}}<br>'
-                    +'<span style="color:#6c757d;">// Ctrl+S to sync to /home via Worker per Feature 1</span><br>'
-                    +'<span style="color:#6c757d;">// File: /home/user/hello.c</span></div></div>';
-                  content.style.background="#ffffff";
-                  content.style.color="#212529";
-                }}
-                log("editor: Monaco VISIBLE per fix - 380px light theme with code, line numbers, syntax highlighting");
+            // Phase 9 Option B: REAL Monaco/Xterm loaded from CDN (classic scripts, no-cors => http:// and file://)
+            let _uiStatus = [];
+            async function initEditor() {{
+              try {{
+                const mod = await import('./assets/js/editor.js');
+                const editor = new mod.Editor({{ storage: null }});
+                await editor.mount();
+                _uiStatus.push("Monaco");
+              }} catch (e) {{
+                _uiStatus.push("Monaco FAILED: " + e.message);
+                console.error(e);
               }}
             }}
-            function initXterm() {{
-              // Xterm now VISIBLE by default per fix - not hidden, aligned below canvas in screen-wrapper
-              let overlay=document.getElementById("xterm-overlay");
-              if(!overlay) {{
-                overlay=document.createElement("div"); overlay.id="xterm-overlay";
-                overlay.style.cssText="display:block; width:1024px; max-width:100%; height:180px; background:#0a0a0a; color:#0f0; font-family:monospace; padding:10px; overflow:auto; border:1px solid #dee2e6; border-radius:4px; margin-top:12px; font-size:12px; box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);";
-                overlay.innerHTML='<div style="color:#0f0; font-weight:600; margin-bottom:6px;">Xterm.js Terminal - Native text selection, copy/paste, custom fonts per Feature 5</div>'
-                  +'<div style="color:#e0e0e0;">user@linuxhtml:~$ <span style="color:#fff;">gcc hello.c -o hello && ./hello</span><br>Hello LinuxHTML<br>user@linuxhtml:~$ <span style="background:#0f0; color:#000;">_</span></div>';
-                document.getElementById("screen-wrapper").appendChild(overlay);
-                log("xterm: Native Terminal VISIBLE per fix - 180px below canvas, light theme border, aligned");
-              }} else {{
-                overlay.style.display="block";
+            async function initXterm() {{
+              try {{
+                const mod = await import('./assets/js/xterm.js');
+                const xterm = new mod.XtermOverlay({{ container: document.getElementById("screen-wrapper") }});
+                await xterm.init({{ bus: {{ register: () => {{}} }} }});
+                _uiStatus.push("Xterm");
+              }} catch (e) {{
+                _uiStatus.push("Xterm FAILED: " + e.message);
+                console.error(e);
               }}
-              // Also ensure screen-wrapper log is visible
-              const logEl=document.getElementById("log");
-              if(logEl) logEl.style.display="block";
+            }}
+            // Editor panel resize handle (drag left edge to resize)
+            function initEditorResize() {{
+              const handle=document.getElementById("editor-resize");
+              const panel=document.getElementById("editor-panel");
+              if(!handle||!panel) return;
+              let startX=0,startW=0;
+              const onMove=(e)=>{{ const dx=startX-e.clientX; panel.style.width=Math.max(280,Math.min(900,startW+dx))+"px"; }};
+              const onUp=()=>{{ handle.classList.remove("active"); document.removeEventListener("mousemove",onMove); document.removeEventListener("mouseup",onUp); document.body.style.cursor=""; document.body.style.userSelect=""; }};
+              handle.addEventListener("mousedown",(e)=>{{ startX=e.clientX; startW=panel.offsetWidth; handle.classList.add("active"); document.body.style.cursor="col-resize"; document.body.style.userSelect="none"; document.addEventListener("mousemove",onMove); document.addEventListener("mouseup",onUp); e.preventDefault(); }});
+            }}
+            // Update file path display and dirty indicator in editor header
+            function updateEditorFileInfo(path, dirty) {{
+              const el=document.getElementById("editor-file-path");
+              if(el) el.textContent=path||"";
+              const dot=document.getElementById("editor-dirty-dot");
+              if(dot) {{ if(dirty) dot.classList.add("visible"); else dot.classList.remove("visible"); }}
             }}
             document.getElementById("acknowledge").onclick = async () => {{
               document.getElementById("first-run").style.display="none";
@@ -343,15 +459,16 @@ def build_pwa(tier: str):
               await verifyIntegrity();
               const display=initDisplay();
               initInput();
-              // Phase 9 Option B: Enable Monaco/Xterm by default
-              initEditor();
-              initXterm();
+              initEditorResize();
+              // Phase 9 Option B: Enable Monaco/Xterm by default (REAL widgets from CDN)
+              await initEditor();
+              await initXterm();
               display.updateDirtyRect(10,50,100,20,null);
               log("Linux boot... (Phase3 M3 + Phase 9 Option B - Monaco/Xterm enabled by default per user choice)");
               log("keyboard: press A, mouse: click canvas, touch: drag trackpad, Monaco: 400px right, Xterm: overlay");
               performance.mark("v86-init"); performance.mark("login-prompt");
               log("Login: root (no password) - terminal visible, keyboard/mouse/touch works per README-1.md:2373, Monaco/Xterm visible per Option B");
-              document.getElementById("status").textContent = "Booted (Phase 9 Option B) - Monaco/Xterm/Display/Input ready";
+              document.getElementById("status").textContent = "Booted (Phase 9 Option B) - " + _uiStatus.join(" | ") + " - Display/Input ready";
             }};
             probe();
             if("serviceWorker" in navigator) {{

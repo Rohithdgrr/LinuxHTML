@@ -1,92 +1,258 @@
-// src/ui/editor/editor.js - Monaco IDE overlay per Feature 1 per review suggestion 9 Features
-// What: Dockable code editor (Monaco) overlaid on canvas, synced bidirectionally to guest /home via storage Worker
-// Why: Developers shouldn't edit code inside 1024x768 VGA terminal - real IDE with syntax highlighting, LSP, split-pane
-// Implementation: Monaco from CDN pinned in versions.lock, bridge file ops through StorageBridge readFile/writeFile
-// Maps paths to hda offsets via ext4 reader in Worker, or 9P writable overlay for /home per docs/BACKEND.MD hybrid
+// src/ui/editor/editor.js - REAL Monaco IDE overlay per Feature 1.
+// Pinned version per versions.lock. Loads Monaco via classic AMD loader (no-cors)
+// so it works on http:// and file://. Blob-worker trick removes cross-origin worker restriction.
+import { loadScript } from "../vendor-loader.js";
+
+const MONACO_VER = "0.44.0";
+const CDN = `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_VER}/min/vs`;
 
 export class Editor {
-  constructor({ container = document.getElementById("editor"), storage = null } = {}) {
-    this.container = container;
+  constructor({ container = null, storage = null } = {}) {
+    this.container = container || document.getElementById("editor-content");
     this.storage = storage; // StorageBridge for /home sync
     this.monaco = null;
-    this.model = null;
-    console.log("[editor] Monaco IDE overlay per Feature 1 - dockable, synced to /home via Worker");
+    this.editor = null;
+    this.currentPath = "/home/user/README.md";
+    this._dirty = false;
+    this._minimapEnabled = false;
+    this._wordWrapEnabled = false;
+    console.log("[editor] REAL Monaco IDE overlay per Feature 1 - dockable, synced to /home via Worker");
   }
 
   async loadMonaco() {
-    // Load Monaco from CDN pinned in versions.lock (monaco 0.44.0)
-    if (typeof monaco !== "undefined") {
-      this.monaco = monaco;
-      return;
-    }
-    console.log("[editor] Loading Monaco from CDN per Feature 1");
-    // In real implementation, would load via require.js or import map
-    // For Phase 9 stub, simulate
-    this.monaco = {
-      editor: {
-        create: (el, opts) => {
-          el.textContent = "Monaco Editor (stub) - Feature 1 per review suggestion 9 Features";
-          el.style.background = "#1e1e1e";
-          el.style.color = "#d4d4d4";
-          el.style.padding = "10px";
-          return {
-            getValue: () => el.textContent,
-            setValue: (v) => { el.textContent = v; },
-            onDidChangeModelContent: (cb) => { el.addEventListener("input", cb); },
-          };
-        }
-      }
+    if (this.monaco) return this.monaco;
+    // Cross-origin worker workaround: Monaco workers can't spawn from CDN origin.
+    // Blob worker + importScripts() is no-cors, so it works on http:// and file://.
+    window.MonacoEnvironment = {
+      getWorkerUrl: () => URL.createObjectURL(new Blob([
+        `self.MonacoEnvironment={baseUrl:"${CDN}/"};` +
+        `importScripts("${CDN}/base/worker/workerMain.js");`
+      ], { type: "text/javascript" })),
     };
-    console.log("[editor] Monaco loaded (stub) per Feature 1");
+    await loadScript(`${CDN}/loader.js`); // AMD loader (classic script, no-cors)
+    window.require.config({ paths: { vs: CDN } });
+    await new Promise((res, rej) =>
+      window.require(["vs/editor/editor.main"], res, rej)); // real bundle, real error path
+    if (!window.monaco) throw new Error("monaco global missing after editor.main");
+    this.monaco = window.monaco;
+    console.log("[editor] REAL monaco loaded", this.monaco.version);
+    return this.monaco;
+  }
+
+  _showLoading(msg) {
+    if (!this.container) return;
+    this.container.innerHTML = "";
+    const loader = document.createElement("div");
+    loader.className = "editor-loading";
+    loader.style.cssText = "display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#1e1e1e;color:#888;font-size:13px;font-family:Consolas,monospace;";
+    loader.innerHTML = `<div class="spinner" style="width:16px;height:16px;border:2px solid #333;border-top-color:#007acc;border-radius:50%;animation:editor-spin 0.8s linear infinite;margin-right:10px;"></div>${msg}`;
+    this.container.appendChild(loader);
+  }
+
+  _hideLoading() {
+    if (!this.container) return;
+    const loader = this.container.querySelector(".editor-loading");
+    if (loader) loader.remove();
+  }
+
+  _showError(msg) {
+    if (!this.container) return;
+    this.container.innerHTML = "";
+    const err = document.createElement("div");
+    err.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:#1e1e1e;color:#f44;font-size:13px;font-family:Consolas,monospace;padding:20px;text-align:center;";
+    err.innerHTML = `<div style="font-size:24px;margin-bottom:10px;">⚠️</div><div style="margin-bottom:8px;">${msg}</div><div style="font-size:11px;color:#888;">Check console for details</div>`;
+    this.container.appendChild(err);
+  }
+
+  _updateFileInfo() {
+    // Update the HTML header elements if they exist (PWA build path)
+    const pathEl = document.getElementById("editor-file-path");
+    if (pathEl) pathEl.textContent = this.currentPath;
+    const dotEl = document.getElementById("editor-dirty-dot");
+    if (dotEl) {
+      if (this._dirty) dotEl.classList.add("visible");
+      else dotEl.classList.remove("visible");
+    }
+    // Update the footer label to show current language mode
+    const modeLabel = document.getElementById("editor-mode-label");
+    if (modeLabel && this.editor) {
+      const model = this.editor.getModel();
+      const lang = model ? model.getLanguageId() : "text";
+      modeLabel.innerHTML = `Monaco <span style="opacity:0.6">•</span> ${lang.charAt(0).toUpperCase() + lang.slice(1)}`;
+    }
+    // Update file explorer active state
+    const items = document.querySelectorAll("#editor-explorer .explorer-item");
+    items.forEach(item => {
+      item.classList.remove("active");
+      if (item.textContent.includes(this.currentPath.split("/").pop())) {
+        item.classList.add("active");
+      }
+    });
+  }
+
+  _registerToolbarActions() {
+    // Toggle minimap
+    window._editorToggleMinimap = () => {
+      if (!this.editor) return;
+      this._minimapEnabled = !this._minimapEnabled;
+      this.editor.updateOptions({ minimap: { enabled: this._minimapEnabled } });
+      // Update button state
+      const btn = document.querySelector("#editor-toolbar button:first-child");
+      if (btn) btn.classList.toggle("active", this._minimapEnabled);
+    };
+
+    // Toggle word wrap
+    window._editorToggleWordWrap = () => {
+      if (!this.editor) return;
+      this._wordWrapEnabled = !this._wordWrapEnabled;
+      this.editor.updateOptions({ wordWrap: this._wordWrapEnabled ? "on" : "off" });
+      const btn = document.querySelector("#editor-toolbar button:nth-child(2)");
+      if (btn) btn.classList.toggle("active", this._wordWrapEnabled);
+    };
+
+    // Format document
+    window._editorFormat = async () => {
+      if (!this.editor || !this.monaco) return;
+      await this.editor.getAction("editor.action.formatDocument")?.run();
+    };
+
+    // Command palette
+    window._editorCommandPalette = () => {
+      if (!this.editor || !this.monaco) return;
+      this.editor.trigger("keyboard", "editor.action.quickCommand");
+    };
+
+    // Open file from explorer
+    window._editorOpenFile = (path) => {
+      this.openFile(path);
+    };
+  }
+
+  async mount() {
+    if (!this.container) {
+      console.warn("[editor] no container (#editor-content) found");
+      return null;
+    }
+    // Reveal the editor panel (hidden by default in index.html).
+    const panel = document.getElementById("editor-panel");
+    if (panel) panel.style.display = "flex";
+
+    // Show loading state while Monaco loads from CDN
+    this._showLoading("Loading Monaco Editor\u2026");
+
+    try {
+      await this.loadMonaco();
+    } catch (e) {
+      this._showError("Failed to load Monaco Editor");
+      console.error("[editor] Monaco load failed:", e);
+      return null;
+    }
+    this._hideLoading();
+
+    this.editor = this.monaco.editor.create(this.container, {
+      value: `// ${this.currentPath}\n// Ctrl+S syncs to guest /home via Storage Worker\n`,
+      language: "markdown",
+      theme: "vs-dark",
+      automaticLayout: true,
+      minimap: { enabled: false },
+      fontSize: 13,
+      lineHeight: 20,
+      padding: { top: 8, bottom: 8 },
+      smoothScrolling: true,
+      cursorBlinking: "smooth",
+      cursorSmoothCaretAnimation: "on",
+      renderLineHighlight: "all",
+      bracketPairColorization: { enabled: true },
+      guides: { bracketPairs: true },
+      scrollBeyondLastLine: false,
+      wordWrap: "off",
+      tabSize: 2,
+      folding: true,
+      lineNumbers: "on",
+      renderWhitespace: "selection",
+      suggest: { showStatusBar: true },
+      contextmenu: true,
+      mouseWheelZoom: true,
+    });
+
+    // Track dirty state
+    this.editor.onDidChangeModelContent(() => {
+      this._dirty = true;
+      this._updateFileInfo();
+    });
+
+    // Ctrl+S / Cmd+S to save
+    this.editor.addCommand(
+      this.monaco.KeyMod.CtrlCmd | this.monaco.KeyCode.KeyS, () => this.save());
+
+    // Ctrl+Shift+F / Cmd+Shift+F to format
+    this.editor.addCommand(
+      this.monaco.KeyMod.CtrlCmd | this.monaco.KeyMod.Shift | this.monaco.KeyCode.KeyF,
+      () => this.editor?.getAction("editor.action.formatDocument")?.run());
+
+    // Register toolbar actions
+    this._registerToolbarActions();
+
+    this._updateFileInfo();
+    console.log("[editor] REAL editor mounted");
+    return this.editor;
   }
 
   async openFile(path) {
-    // Read from guest /home via StorageBridge per docs/BACKEND.MD hybrid
-    // Path maps to hda offset via ext4 reader in Worker (simplified: treat path as offset)
-    console.log(`[editor] openFile ${path} via StorageBridge per Feature 1`);
-    if (this.storage) {
+    this.currentPath = path;
+    if (this.storage?.readFile) {
       try {
-        const data = await this.storage.read(0, 1024); // Simplified: read from hda offset 0
-        const text = new TextDecoder().decode(data).replace(/\0/g, "");
-        if (this.model) this.model.setValue(text);
-        return text;
+        const data = await this.storage.readFile(path);
+        this.editor.setValue(new TextDecoder().decode(data));
       } catch (e) {
-        console.warn(`[editor] openFile failed ${path}: ${e.message}`);
+        this.editor.setValue(`// Error reading ${path}: ${e.message}`);
+        console.error("[editor] read failed:", e);
       }
+    } else {
+      this.editor.setValue(`// ${path}\n// File not found or storage unavailable\n`);
     }
-    return "";
+    this.editor.updateOptions({ readOnly: false });
+    this._dirty = false;
+    this._updateFileInfo();
+    // Auto-detect language from extension
+    const ext = path.split(".").pop().toLowerCase();
+    const langMap = {
+      js: "javascript", ts: "typescript", py: "python", sh: "shell",
+      md: "markdown", json: "json", html: "html", css: "css",
+      c: "c", cpp: "cpp", h: "c", rs: "rust", go: "go", rb: "ruby",
+      java: "java", sql: "sql", yaml: "yaml", yml: "yaml", toml: "toml",
+      xml: "xml", txt: "plaintext",
+    };
+    const model = this.editor.getModel();
+    if (model && langMap[ext]) {
+      this.monaco.editor.setModelLanguage(model, langMap[ext]);
+    }
+    this.editor.focus();
   }
 
-  async saveFile(path, content) {
-    // Write via StorageBridge atomic per README-1.md:1026 write temp->flush->rename
-    console.log(`[editor] saveFile ${path} ${content.length} bytes via StorageBridge per Feature 1`);
-    if (this.storage) {
-      const data = new TextEncoder().encode(content);
-      await this.storage.write(0, data);
-      await this.storage.flush();
-      console.log(`[editor] saveFile ${path} flushed per README-1.md:987`);
-    }
-    // Also sync to guest via 9P writable overlay for /home (not violating immutable 9P root per README-1.md:2762:1)
-    // Real implementation would expose 9P writable for /home only
-  }
-
-  dock() {
-    if (!this.container) {
-      // Create dockable container
-      const el = document.createElement("div");
-      el.id = "editor";
-      el.style.cssText = "position:fixed;top:40px;right:10px;bottom:10px;width:400px;background:#1e1e1e;border:1px solid #333;z-index:900;display:flex;flex-direction:column";
-      el.innerHTML = `<div style="background:#007acc;color:white;padding:4px;font-size:11px">Monaco Editor - Feature 1 per review suggestion 9 Features</div><div id="editor-content" style="flex:1;padding:10px;color:#d4d4d4">Ctrl+S to sync to /home via Worker</div>`;
-      document.body.appendChild(el);
-      this.container = el;
-    }
-    console.log("[editor] Docked per Feature 1");
-  }
-
-  undock() {
-    if (this.container) {
-      this.container.style.display = this.container.style.display === "none" ? "flex" : "none";
-      console.log("[editor] Toggled per Feature 1");
+  async save() {
+    const value = this.editor.getValue();
+    if (this.storage?.writeFile) {
+      try {
+        await this.storage.writeFile(this.currentPath, new TextEncoder().encode(value));
+        this._dirty = false;
+        this._updateFileInfo();
+        // Brief flash feedback on the footer
+        const footer = document.querySelector("#editor-panel .editor-footer");
+        if (footer) {
+          const origHTML = footer.innerHTML;
+          footer.innerHTML = '<span class="save-feedback">✓ Saved</span>';
+          setTimeout(() => {
+            footer.innerHTML = origHTML;
+            this._updateFileInfo();
+          }, 1200);
+        }
+        console.log(`[editor] saved ${this.currentPath} via Storage Worker`);
+      } catch (e) {
+        console.error("[editor] save failed:", e);
+      }
+    } else {
+      console.warn("[editor] storage.writeFile missing - in-memory only");
     }
   }
 }

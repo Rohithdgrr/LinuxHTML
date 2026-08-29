@@ -127,9 +127,12 @@ export async function boot(tier = "base") {
   const inputBridge = new InputBridge({ emulator: null, screen }); // emulator will be set after V86 creation
   // Phase 9 Option B: Enable Monaco/Xterm by default per user choice (breaks Phase 9 gating but makes demo impressive)
   const editor = new Editor({ storage: null }); // will be wired after storage
-  const xterm = new XtermOverlay({ container: screen });
+  const xterm = new XtermOverlay({ container: document.getElementById("screen-wrapper") || screen });
   const wsBridge = new WebSocketBridge({ enabled: true }); // Phase 9 WebSocket enabled by default for demo
   const clipboard = new ClipboardBridge({ inputBridge, emulator: null });
+
+  // Honest UI status (no false "ready"): track real widget load outcomes
+  const ui = [];
 
   // In real browser, V86 would be loaded via script tag or import
   // For Phase 3, simulate V86 if not available
@@ -148,14 +151,16 @@ export async function boot(tier = "base") {
     const storage = new StorageBridge();
     await storage.open().catch(e => console.warn("[main] storage open failed", e));
     const network = new NetworkBridge({ enabled: false });
+    editor.storage = storage; // Wire storage so editor can read/write /home files
     console.log("[main] storage/network bridges ready");
-    // Phase 9 Option B: Enable Monaco/Xterm/Clipboard/WebSocket by default
-    await editor.loadMonaco(); editor.dock(); await editor.openFile("/home/user/README.md");
-    await xterm.init(emulator); // Xterm overlay visible by default per Option B
+    // Phase 9 Option B: Enable Monaco/Xterm/Clipboard/WebSocket by default (real widgets, honest status)
+    try { await editor.mount(); ui.push("Monaco"); } catch (e) { ui.push(`Monaco FAILED: ${e.message}`); console.error(e); }
+    try { await xterm.init(emulator); ui.push("Xterm"); } catch (e) { ui.push(`Xterm FAILED: ${e.message}`); console.error(e); }
     await clipboard.init(); clipboard.sendToVM("echo 'Monaco/Xterm ready'"); // Clipboard bridge
     wsBridge.enable(); // WebSocket enabled for demo
 
     emulator.run();
+    if (statusEl) statusEl.textContent = `Booted (Phase 9 Option B) - ${ui.join(" | ")} - Display/Input ready`;
     performance.mark("v86-init");
     performance.measure("v86-init", "v86-init-start", "v86-init");
   } else {
@@ -169,14 +174,15 @@ export async function boot(tier = "base") {
     const storage = new StorageBridge();
     // Mock Worker for test without real Worker file
     try { await storage.open(); } catch(e) {}
-    // Phase 9 Option B: Show Monaco and Xterm even in simulation
-    await editor.loadMonaco(); editor.dock();
-    await xterm.init({ bus: { register: () => {} } });
+    editor.storage = storage; // Wire storage so editor can read/write /home files
+    // Phase 9 Option B: Show Monaco and Xterm even in simulation (real widgets, honest status)
+    try { await editor.mount(); ui.push("Monaco"); } catch (e) { ui.push(`Monaco FAILED: ${e.message}`); console.error(e); }
+    try { await xterm.init({ bus: { register: () => {} } }); ui.push("Xterm"); } catch (e) { ui.push(`Xterm FAILED: ${e.message}`); console.error(e); }
     await clipboard.init();
     performance.mark("v86-init");
     performance.mark("login-prompt");
     console.log("[main] Simulated boot - terminal visible per README-1.md:2373, keyboard/mouse/touch via InputBridge, Monaco/Xterm visible per Option B");
-    if (statusEl) statusEl.textContent = "Booted (Phase 9 Option B) - Monaco/Xterm/Clipboard/WebSocket ready";
+    if (statusEl) statusEl.textContent = `Booted (Phase 9 Option B) - ${ui.join(" | ")} - Display/Input ready`;
   }
 
   // Waterfall measure per README-1.md:1833

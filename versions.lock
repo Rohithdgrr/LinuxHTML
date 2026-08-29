@@ -74,6 +74,25 @@
     "note": "Pinned via package-lock.json equivalent; versions.lock tracks expected version."
   },
 
+  "monaco_editor": {
+    "name": "monaco-editor",
+    "version": "0.44.0",
+    "source_url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js",
+    "bundle_url": "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor.main.js",
+    "sha256_loader": "fa0ef7ea8ead3713f5b968036b818d30bbb4715c39ae977d8affc9905aa32588",
+    "note": "Feature 1 Monaco IDE overlay. Loaded via classic AMD loader.js (no-cors => works on http:// and file://). Worker cross-origin restriction bypassed with Blob worker in editor.js."
+  },
+
+  "xterm": {
+    "name": "@xterm/xterm",
+    "version": "5.5.0",
+    "source_url": "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js",
+    "css_url": "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css",
+    "sha256_js": "1f991ac3b4b283ebf96e60ae23a00a52765dd3a2e46fa6fdda9f1aab032f7495",
+    "sha256_css": "ba8e6985669488981ccf40c0cefe3aba80722cb6c92de7ad628b0bd717faf2b6",
+    "note": "Feature 5 Xterm.js overlay. UMD lib/xterm.js (global var Terminal) + css/xterm.css loaded as classic tags (no-cors)."
+  },
+
   "python": {
     "name": "python",
     "version": "3.11.9",
