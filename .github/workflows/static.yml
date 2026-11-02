@@ -2,10 +2,8 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
-
+  # Manual only: pages.yml builds and publishes the actual app on pushes.
+  # This template uploads the repository and should not be used for the app site.
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
