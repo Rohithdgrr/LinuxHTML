@@ -54,3 +54,9 @@
 }
 @media(max-width:360px){.dock-button{width:36px}.dock-app{width:32px;height:32px}.launcher-apps{grid-template-columns:1fr}.welcome{left:27%}.welcome h1{font-size:36px}}
 @media(max-height:500px){.desktop{min-height:0}.window-layer{top:48px;bottom:58px}.topbar{height:48px}.launcher{max-height:calc(100dvh - 70px);overflow:auto}.dock-wrap{bottom:3px}.dock-button{height:40px}}
+
+.update-badge{border:1px solid #a8e8dc;background:#d7fbf0;color:#164f49;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;white-space:nowrap}
+.settings-system{border-top:1px solid #e6edf3;margin-top:20px;padding-top:16px}.settings-system h3{font-size:15px;margin:0}.settings-system small{display:block;color:#718398;font-size:11px;margin-top:8px}.settings-system .actions{display:flex;flex-wrap:wrap;gap:6px}.settings-system p{margin:9px 0}
+@media(max-width:520px){.top-right{gap:6px}.update-badge{font-size:10px;padding:5px}.brand{gap:6px}#clock{font-size:10px}}
+
+@media(max-width:520px){#clock{display:none}}

@@ -15,7 +15,7 @@
 ## LinuxHTML OS blueprint
 
 The active product and implementation plan is in [`docs/blueprint/`](docs/blueprint/feature_list.md):
-[Features](docs/blueprint/feature_list.md) · [Backend](docs/blueprint/backend.md) · [Workflows](docs/blueprint/workflow.md) · [Process](docs/blueprint/process.md) · [Tasks](docs/blueprint/tasks.md) · [Problems & solutions](docs/blueprint/problems-solution.md) · [Future scope](docs/blueprint/future-scope.md) · [Mechanism](docs/blueprint/mechanism.md). Historical documentation may describe unimplemented targets.
+[Roadmap](docs/blueprint/implementation-roadmap.md) · [Features](docs/blueprint/feature_list.md) · [Backend](docs/blueprint/backend.md) · [Workflows](docs/blueprint/workflow.md) · [Process](docs/blueprint/process.md) · [Tasks](docs/blueprint/tasks.md) · [Problems & solutions](docs/blueprint/problems-solution.md) · [Future scope](docs/blueprint/future-scope.md) · [Mechanism](docs/blueprint/mechanism.md). Historical documentation may describe unimplemented targets.
 
 ![Architecture](docs/images/architecture.svg)
 

@@ -390,4 +390,62 @@ document.querySelector('#read-file').addEventListener('click', async () => {
   try { if (!vm) throw new Error('Start the Linux VM from Terminal first'); const data = await vm.read_file('/' + filename()); if (!acceptReplacement()) return; document.querySelector('#filecontent').value = new TextDecoder().decode(data); document.querySelector('#file-status').textContent = 'Read /mnt/' + filename(); }
   catch (e) { document.querySelector('#file-status').textContent = 'Read failed: ' + e.message; }
 });
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(e => console.warn('Offline cache unavailable:', e));
+// Update prompts never force activation or reload: other tabs and a running VM
+// must keep their current asset version until the user has saved their work.
+const updateStatus = document.querySelector('#app-update-status');
+const updateBadge = document.querySelector('#update-badge');
+const updateButton = document.querySelector('#check-app-update');
+let registration;
+function showUpdateWaiting() {
+  updateBadge.hidden = false;
+  updateStatus.textContent = 'An update is ready. Save your files, back up important work, and stop the VM. Close all LinuxHTML tabs or installed app windows, then reopen the app to apply it.';
+}
+function observeUpdate(reg) {
+  if (reg.waiting && navigator.serviceWorker.controller) showUpdateWaiting();
+  reg.addEventListener('updatefound', () => {
+    const worker = reg.installing;
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdateWaiting();
+      else if (worker.state === 'redundant' && updateBadge.hidden) updateStatus.textContent = 'Update download failed. Check your connection and try again.';
+    });
+  });
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).then(reg => {
+    registration = reg; observeUpdate(reg);
+    if (updateBadge.hidden) updateStatus.textContent = 'Offline app registered. Updates are checked when the app opens.';
+  }).catch(e => { updateStatus.textContent = `Offline app unavailable: ${e.message || e.name}. Check your browser settings and connection.`; });
+} else updateStatus.textContent = 'Offline app updates are not supported in this browser or connection.';
+updateButton.addEventListener('click', async () => {
+  if (!registration) { updateStatus.textContent = 'Offline app is not available yet. Try again or reopen the app.'; return; }
+  updateButton.disabled = true;
+  try {
+    updateStatus.textContent = 'Checking for updates…';
+    await registration.update();
+    if (registration.waiting && navigator.serviceWorker.controller) showUpdateWaiting();
+    else if (registration.installing) updateStatus.textContent = 'An update is downloading. Keep this app open until the check finishes.';
+    else updateStatus.textContent = 'Update check complete. No update is waiting.';
+  } catch (e) { updateStatus.textContent = `Update check failed: ${e.message || e.name}. Check your connection and try again.`; }
+  finally { updateButton.disabled = false; }
+});
+const storageStatus = document.querySelector('#browser-storage-status');
+async function describeBrowserStorage(requestProtection = false) {
+  if (!navigator.storage) { storageStatus.textContent = 'Browser storage information is unavailable. Export important work.'; return; }
+  try {
+    let protection = null;
+    if (requestProtection) {
+      if (!navigator.storage.persist) { storageStatus.textContent = 'This browser cannot request storage protection. Export important work.'; return; }
+      protection = await navigator.storage.persist();
+    } else if (navigator.storage.persisted) protection = await navigator.storage.persisted();
+    let estimate = '';
+    if (navigator.storage.estimate) {
+      const info = await navigator.storage.estimate();
+      if (Number.isFinite(info.usage) && Number.isFinite(info.quota)) estimate = ` Approximately ${(info.usage / 1048576).toFixed(1)} MiB used of ${(info.quota / 1048576).toFixed(0)} MiB available to this origin.`;
+    }
+    const label = protection === true ? 'Storage protection granted' : protection === false ? 'Storage protection not granted' : 'Storage protection status unavailable';
+    storageStatus.textContent = `${label}.${estimate} This is not a backup; browser data can still be cleared.`;
+  } catch (e) { storageStatus.textContent = `Storage status unavailable: ${e.message || e.name}. Export important work.`; }
+}
+document.querySelector('#check-browser-storage').addEventListener('click', () => describeBrowserStorage());
+document.querySelector('#request-browser-storage').addEventListener('click', () => describeBrowserStorage(true));
