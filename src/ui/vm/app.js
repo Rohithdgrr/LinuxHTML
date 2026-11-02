@@ -6,23 +6,40 @@ const status = document.querySelector('#status');
 const start = document.querySelector('#acknowledge');
 let vm;
 const urls = [];
-const setStatus = message => { status.textContent = message; };
+const startProgress = document.querySelector('#start-progress');
+const setStatus = message => { status.textContent = message; if (!startProgress.hidden) startProgress.textContent = message; };
+
+// Bound each download, including the response body, so a stalled connection
+// cannot leave the start button disabled indefinitely. Integrity checks still
+// apply after a successful download.
+async function downloadBytes(url, name, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120000);
+  try {
+    const response = await fetch(url, {...options, signal:controller.signal});
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.arrayBuffer();
+  } catch (e) {
+    const detail = e.name === 'AbortError' ? 'download timed out' : (e.message || e.name);
+    throw new Error(`Could not download ${name} (${detail}). Check your connection and try again.`);
+  } finally { clearTimeout(timer); }
+}
 
 async function verifiedArtifacts() {
-  const response = await fetch('./manifest-base.json', { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Manifest unavailable (${response.status})`);
-  const manifest = await response.json();
+  const manifestBytes = await downloadBytes('./manifest-base.json', 'VM manifest', {cache:'no-store'});
+  let manifest;
+  try { manifest = JSON.parse(new TextDecoder().decode(manifestBytes)); }
+  catch { throw new Error('Invalid VM manifest. Reload the app or try again later.'); }
   if (!['buildroot', 'alpine'].includes(manifest.guest)) throw new Error('Unsupported guest image');
   const guestImage = manifest.guest === 'alpine' ? 'alpine-virt-3.24.3-x86.iso' : 'buildroot-bzimage68.bin';
   const names = ['libv86.js', 'v86.wasm', 'v86-fallback.wasm', 'seabios.bin', 'vgabios.bin', guestImage, 'xterm.js', 'xterm.css', 'addon-fit.js'];
   if (manifest.guest === 'alpine') names.push('alpine-data-ext2.img.gz');
   const result = {guest: manifest.guest};
-  for (const name of names) {
+  for (const [index, name] of names.entries()) {
+    setStatus(`Loading and verifying Linux component ${index + 1} of ${names.length}: ${name}…`);
     const info = manifest.artifacts?.[name];
     if (!info || info.file !== `assets/${name}` || !/^[a-f0-9]{64}$/.test(info.sha256)) throw new Error(`Invalid manifest entry: ${name}`);
-    const res = await fetch(`./${info.file}`, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`Unable to fetch ${name}: ${res.status}`);
-    const data = await res.arrayBuffer();
+    const data = await downloadBytes(`./${info.file}`, name, {cache:'no-cache'});
     const digest = await crypto.subtle.digest('SHA-256', data);
     const hash = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
     if (hash !== info.sha256) throw new Error(`Integrity check failed: ${name}`);
@@ -41,6 +58,8 @@ async function loadVerifiedScript(bytes) {
 }
 async function startVM() {
   start.disabled = true;
+  startProgress.hidden = false;
+  startProgress.textContent = 'Preparing Linux…';
   window.linuxhtmlGuestReady = false;
   let terminal, resizeObserver, persistentDisk;
   document.querySelector('#start-error').textContent = '';
@@ -75,6 +94,7 @@ async function startVM() {
     await loadVerifiedScript(assets['libv86.js']);
     if (typeof window.V86 !== 'function' || typeof window.Terminal !== 'function' || typeof window.FitAddon?.FitAddon !== 'function') throw new Error('Required emulator or terminal export is missing');
     document.querySelector('#first-run').hidden = true;
+    startProgress.hidden = true;
     document.querySelector('#vm-section').hidden = false;
     const bootStart = performance.now();
     const container = document.querySelector('#terminal-container');
@@ -254,6 +274,7 @@ async function startVM() {
     resizeObserver?.disconnect();
     terminal?.dispose();
     persistentDisk?.close();
+    startProgress.hidden = true;
     document.querySelector('#start-error').textContent = `Start failed: ${error.message}`;
     setStatus(`Start failed: ${error.message}`);
     document.querySelector('#first-run').hidden = false;

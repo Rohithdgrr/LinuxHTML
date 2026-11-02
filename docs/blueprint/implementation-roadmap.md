@@ -6,7 +6,8 @@ Status: staged plan, not a claim that future features are complete. The publishe
 - [x] Mobile-sized app panels, touch controls and terminal command input; Chromium mobile viewport end-to-end test.
 - [ ] Test physical Android and iOS devices and desktop Chrome, Firefox and Safari; publish the actual support matrix.
 - [x] Make app-update availability and storage state visible without automatically reloading or destroying work; verified with a real waiting service worker in Chromium.
-- [ ] Improve loading, failure and recovery flows; test offline, full quota, blocked storage, orientation and keyboard scenarios.
+- [x] Show Linux asset-loading progress and recoverable download/integrity errors; test a failed mobile startup and retry.
+- [ ] Continue failure and recovery testing for offline, full quota, blocked storage, orientation and keyboard scenarios.
 - Acceptance: documented end-to-end results for terminal, notes, files, lessons and editor on supported devices; failures surface actionable messages.
 
 ## 2. Editing and desktop
