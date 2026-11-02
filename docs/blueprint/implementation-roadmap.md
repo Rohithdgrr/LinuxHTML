@@ -4,7 +4,7 @@ Status: staged plan, not a claim that future features are complete. The publishe
 
 ## 1. Reliability and device usability — in progress
 - [x] Mobile-sized app panels, touch controls and terminal command input; Chromium mobile viewport end-to-end test.
-- [ ] Run current Buildroot packaging, backend, and desktop/mobile Chromium workflows in PR CI.
+- [x] Run current Buildroot packaging, backend, and desktop/mobile Chromium workflows in PR CI; the first verified passing run is https://github.com/Rohithdgrr/LinuxHTML/actions/runs/41484553270.
 - [ ] Test physical Android and iOS devices and desktop Chrome, Firefox and Safari; publish the actual support matrix.
 - [x] Make app-update availability and storage state visible without automatically reloading or destroying work; verified with a real waiting service worker in Chromium.
 - [x] Show Linux asset-loading progress and recoverable download/integrity errors; test a failed mobile startup and retry.
