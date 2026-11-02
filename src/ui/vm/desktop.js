@@ -59,7 +59,7 @@ function geometry(win) {
 }
 function pointerGeometry(win, handle, mode) {
   handle.addEventListener('pointerdown', event => {
-    if (event.button !== 0 || event.target.closest('button') && mode === 'move' || win.classList.contains('maximized')) return;
+    if (window.matchMedia('(max-width: 700px)').matches || event.button !== 0 || event.target.closest('button') && mode === 'move' || win.classList.contains('maximized')) return;
     const start = geometry(win), px = event.clientX, py = event.clientY;
     setGeometry(win, start.x, start.y, start.width, start.height);
     handle.setPointerCapture(event.pointerId);

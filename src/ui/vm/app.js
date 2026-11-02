@@ -215,6 +215,23 @@ async function startVM() {
         }
       }
     });
+    // The separate input is a reliable way to invoke mobile software keyboards;
+    // the xterm console remains available for interactive full-screen programs.
+    const mobileInput = document.querySelector('#mobile-command');
+    document.querySelector('#mobile-command-form').onsubmit = event => {
+      event.preventDefault();
+      if (preparingDisk) { setStatus('Please wait for persistent root setup to finish.'); return; }
+      vm.serial0_send(mobileInput.value + '\r');
+      mobileInput.value = '';
+      mobileInput.focus({preventScroll:true});
+    };
+    document.querySelectorAll('[data-terminal-key]').forEach(button => {
+      button.onclick = () => {
+        if (preparingDisk) { setStatus('Please wait for persistent root setup to finish.'); return; }
+        const keys = {interrupt:'\x03', tab:'\t', up:'\x1b[A', enter:'\r'};
+        vm.serial0_send(keys[button.dataset.terminalKey]);
+      };
+    });
     document.querySelector('#terminal-focus').onclick = () => terminal.focus();
     document.querySelector('#terminal-copy').onclick = async () => {
       const selection = terminal.getSelection();

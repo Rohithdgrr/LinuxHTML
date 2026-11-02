@@ -20,3 +20,37 @@
 .project-content input[type=file]{display:block;max-width:100%;width:100%;font-size:10px;color:#6f8192;margin:0 0 8px;overflow:hidden}.project-sidebar .full+.full{margin-top:7px}.project-content .actions{margin-top:6px}
 
 .terminal-toolbar .disk-import{display:inline-block;color:#b5c7d4;font-size:10px;font-weight:400;padding:5px 8px;border:1px solid #465a6c;border-radius:5px;background:#33485a;cursor:pointer;margin:0}.terminal-toolbar .disk-import[hidden]{display:none}.disk-import:focus-within{outline:2px solid #8bc5ff}
+
+/* Small screens use reachable, scrollable app panels rather than draggable desktop windows. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.mobile-command,.mobile-terminal-keys{display:none}
+@media (max-width:700px){
+  .desktop{min-height:0;height:100dvh}
+  .topbar{height:54px;padding:0 12px}
+  .desktop-area{top:54px}
+  .window-layer{top:54px;bottom:calc(70px + env(safe-area-inset-bottom, 0px))}
+  .app-window,.app-window.maximized{left:4px!important;right:4px!important;top:4px!important;bottom:4px!important;transform:none!important;width:auto!important;height:auto!important;max-height:none!important;border-radius:14px}
+  .window-titlebar{height:52px;padding:0 12px;touch-action:auto}
+  .window-controls{display:flex;gap:4px}
+  .window-controls button{width:38px;height:38px}
+  .window-content{min-height:0;flex:1;overflow:auto;padding:16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .resize-handle{display:none}
+  .dock-wrap{bottom:calc(6px + env(safe-area-inset-bottom, 0px));max-width:100%}
+  .dock{gap:0;padding:4px 5px}
+  .dock-button{width:39px;height:44px}
+  .dock-app{width:34px;height:34px}
+  .dock-divider{margin:0 1px}
+  .launcher{bottom:calc(66px + env(safe-area-inset-bottom, 0px));max-height:calc(100dvh - 82px - env(safe-area-inset-bottom, 0px));overflow:auto;padding:16px}
+  .launcher-footer{margin-top:10px;padding-top:8px}
+  .section-heading,.heading{flex-wrap:wrap}
+  .terminal-toolbar{flex-wrap:wrap;gap:6px}
+  #terminal-container{height:clamp(160px,36dvh,340px);min-height:160px}
+  .mobile-command{display:flex;gap:6px;margin-top:8px}
+  .mobile-command input{min-width:0;flex:1;font-size:16px;padding:9px;border:1px solid #aab9c7;border-radius:7px;color:#172b3a;background:#fff}
+  .mobile-command button,.mobile-terminal-keys button{border:1px solid #a9bacb;border-radius:7px;color:#24415b;background:#edf3f8;padding:8px 10px;min-height:40px}
+  .mobile-terminal-keys{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .mobile-terminal-keys button{font-size:12px}
+  input,select,textarea{font-size:16px!important}
+}
+@media(max-width:360px){.dock-button{width:36px}.dock-app{width:32px;height:32px}.launcher-apps{grid-template-columns:1fr}.welcome{left:27%}.welcome h1{font-size:36px}}
+@media(max-height:500px){.desktop{min-height:0}.window-layer{top:48px;bottom:58px}.topbar{height:48px}.launcher{max-height:calc(100dvh - 70px);overflow:auto}.dock-wrap{bottom:3px}.dock-button{height:40px}}
