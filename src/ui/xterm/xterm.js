@@ -21,7 +21,16 @@ export class XtermOverlay {
       return null;
     }
     await loadCSS(`${BASE}/css/xterm.css`);
-    await loadScript(`${BASE}/lib/xterm.js`, { globalVar: "Terminal" }); // UMD build
+    // Monaco installs an AMD loader, so the UMD bundle exports via AMD rather
+    // than window.Terminal when Monaco was initialized first.
+    let Terminal = window.Terminal;
+    if (!Terminal && typeof window.define === "function" && window.define.amd && window.require) {
+      const module = await new Promise((resolve, reject) => window.require([`${BASE}/lib/xterm.js`], resolve, reject));
+      Terminal = module.Terminal;
+    } else if (!Terminal) {
+      Terminal = await loadScript(`${BASE}/lib/xterm.js`, { globalVar: "Terminal" });
+    }
+    if (typeof Terminal !== "function") throw new Error("xterm Terminal export is unavailable");
 
     // Resolve container lazily: prefer the one passed in, then DOM lookup, then body.
     if (!this.container) {
@@ -47,12 +56,12 @@ export class XtermOverlay {
     // Footer with status
     const footer = document.createElement("div");
     footer.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:3px 10px;background:#007acc;font-size:10px;color:rgba(255,255,255,0.85);";
-    footer.innerHTML = '<span>bash</span><span>Ready</span>';
+    footer.innerHTML = '<span>Terminal</span><span>Not connected to a guest</span>';
     wrapOuter.appendChild(footer);
 
     this.container.appendChild(wrapOuter);
 
-    this.term = new window.Terminal({
+    this.term = new Terminal({
       cursorBlink: true,
       fontSize: 13,
       lineHeight: 1.3,
@@ -68,7 +77,7 @@ export class XtermOverlay {
       allowProposedApi: true,
     });
     this.term.open(wrap); // REAL terminal instance
-    this.term.writeln("\x1b[1;32mLinuxHTML\x1b[0m \x1b[90mxterm overlay ready\x1b[0m");
+    this.term.writeln("LinuxHTML terminal: no guest connected.");
     this.term.writeln("");
 
     if (emulator?.bus?.register) { // guest PTY via VirtIO-serial

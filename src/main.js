@@ -68,17 +68,20 @@ export async function verifyIntegrity(url, expectedHash) {
 export async function verifyAllArtifacts(tier = "base") {
   performance.mark("verify-start");
   try {
-    const manifestUrl = `./assets/../manifest-${tier}.json`;
-    // In Phase 3, verify via fetch of manifest then each artifact
-    // For now, placeholder verifies via stub hashes (real after M7 signed manifest)
-    console.log(`[main] verifyAllArtifacts tier ${tier} - Phase 3 stub verifies placeholder (real SHA-256 after M7)`);
-    // Real:
-    // const manifest = await (await fetch(manifestUrl)).json();
-    // await Promise.all(Object.entries(manifest.artifacts).map(([name, info]) => verifyIntegrity(`./assets/${info.file}`, info.sha256)));
-    await new Promise(r => setTimeout(r, 100));
+    const manifestUrl = `./manifest-${tier}.json`;
+    const response = await fetch(manifestUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Manifest fetch failed: ${response.status}`);
+    const manifest = await response.json();
+    if (!manifest.artifacts || !Object.keys(manifest.artifacts).length) throw new Error("Empty artifact manifest");
+    await Promise.all(Object.values(manifest.artifacts).map(info => {
+      if (!info.file || !/^[a-f0-9]{64}$/i.test(info.sha256)) throw new Error("Invalid artifact manifest entry");
+      const url = new URL(info.file, new URL(manifestUrl, location.href));
+      if (url.origin !== location.origin) throw new Error("Cross-origin artifact rejected");
+      return verifyIntegrity(url.href, info.sha256.toLowerCase());
+    }));
     performance.mark("verify-end");
     performance.measure("verify", "verify-start", "verify-end");
-    console.log("[main] verify [OK] (stub)");
+    console.log("[main] artifact hashes verified (manifest is not authenticated)");
     return true;
   } catch (e) {
     console.error("[main] verify failed", e);
@@ -98,6 +101,7 @@ export async function boot(tier = "base") {
   // First-run disclosure non-bypassable per README-1.md:745, 14.4, invariant 16
   const firstRun = document.getElementById("first-run");
   const ack = document.getElementById("acknowledge");
+  if (!firstRun || !ack) throw new Error("First-run disclosure missing; boot blocked");
   if (firstRun && ack) {
     // Ensure disclosure cannot be bypassed via query param per README-1.md:750
     const params = new URLSearchParams(location.search);
@@ -160,29 +164,12 @@ export async function boot(tier = "base") {
     wsBridge.enable(); // WebSocket enabled for demo
 
     emulator.run();
-    if (statusEl) statusEl.textContent = `Booted (Phase 9 Option B) - ${ui.join(" | ")} - Display/Input ready`;
+    if (statusEl) statusEl.textContent = `Emulator started (guest boot not verified) - ${ui.join(" | ")}`;
     performance.mark("v86-init");
     performance.measure("v86-init", "v86-init-start", "v86-init");
   } else {
-    // Phase 3 simulation without real V86 (still validates display/input wiring) - Phase 9 Option B: also show Monaco/Xterm
-    console.log("[main] V86 not loaded (Phase 3 simulation) - wiring display/input for test - Phase 9 Monaco/Xterm enabled by default");
-    display.renderTestPattern();
-    // Simulate attach
-    display.attachToEmulator({ add_listener: () => {} });
-    inputBridge.attach();
-    // Simulate storage open to show backend selection
-    const storage = new StorageBridge();
-    // Mock Worker for test without real Worker file
-    try { await storage.open(); } catch(e) {}
-    editor.storage = storage; // Wire storage so editor can read/write /home files
-    // Phase 9 Option B: Show Monaco and Xterm even in simulation (real widgets, honest status)
-    try { await editor.mount(); ui.push("Monaco"); } catch (e) { ui.push(`Monaco FAILED: ${e.message}`); console.error(e); }
-    try { await xterm.init({ bus: { register: () => {} } }); ui.push("Xterm"); } catch (e) { ui.push(`Xterm FAILED: ${e.message}`); console.error(e); }
-    await clipboard.init();
-    performance.mark("v86-init");
-    performance.mark("login-prompt");
-    console.log("[main] Simulated boot - terminal visible per README-1.md:2373, keyboard/mouse/touch via InputBridge, Monaco/Xterm visible per Option B");
-    if (statusEl) statusEl.textContent = `Booted (Phase 9 Option B) - ${ui.join(" | ")} - Display/Input ready`;
+    if (statusEl) statusEl.textContent = "Boot unavailable: v86 emulator is not loaded";
+    throw new Error("v86 emulator is not loaded; Linux cannot boot");
   }
 
   // Waterfall measure per README-1.md:1833

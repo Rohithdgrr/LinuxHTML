@@ -47,3 +47,6 @@ tools/bench/results/
 
 # Local serve logs
 .serve.log
+
+# Default experimental backend data (may contain private files)
+/data/

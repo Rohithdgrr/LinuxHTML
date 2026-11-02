@@ -25,7 +25,7 @@ export class Editor {
     // Blob worker + importScripts() is no-cors, so it works on http:// and file://.
     window.MonacoEnvironment = {
       getWorkerUrl: () => URL.createObjectURL(new Blob([
-        `self.MonacoEnvironment={baseUrl:"${CDN}/"};` +
+        `self.MonacoEnvironment={baseUrl:"${CDN.replace(/\/vs$/, "")}/"};` +
         `importScripts("${CDN}/base/worker/workerMain.js");`
       ], { type: "text/javascript" })),
     };
@@ -150,7 +150,9 @@ export class Editor {
     this._hideLoading();
 
     this.editor = this.monaco.editor.create(this.container, {
-      value: `// ${this.currentPath}\n// Ctrl+S syncs to guest /home via Storage Worker\n`,
+      value: this.storage?.writeFile
+        ? `// ${this.currentPath}\n// Ctrl+S saves via storage\n`
+        : `// Preview editor: changes are in memory only and will not be saved.\n`,
       language: "markdown",
       theme: "vs-dark",
       automaticLayout: true,

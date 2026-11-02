@@ -4,6 +4,14 @@
 # Any new dependency MUST be added here in same PR per README-1.md:2113.
 # Format: JSON (parsed by tools/verify_versions.py). Comments are not part of JSON.
 {
+  "pwa_demo_artifacts": {
+    "note": "Experimental PWA; authoritative download pins in tools/fetch_vm_assets.py; guest not maintained by LinuxHTML.",
+    "buildroot_bzimage68": {"version": "Buildroot 2024.05.2 / Linux 6.8.12", "url": "https://i.copy.sh/buildroot-bzimage68.bin", "sha256": "507a759c70ab7a490a233be454d0b5b88bc667956a410b531cb4edc091e2eb1c"},
+    "alpine_virt_iso": {"version": "3.24.3 x86", "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86/alpine-virt-3.24.3-x86.iso", "sha256": "07e06ac189483fdfc3b83029a32d896a3a08df3bc18943ef4cc552c9a86787fd"},
+    "alpine_data_seed": {"version": "ext2 256 MiB v1", "source": "src/ui/vm/alpine-data-ext2.img.gz", "sha256": "6f6b5d5faa1202bcdf851888ab9658e953a6f3a9f349559bfc0a9f28956bbb70", "note": "Empty ext2 image generated with BusyBox mkfs.ext2, compressed with gzip -n; browser disk is not the guest root filesystem."},
+    "xterm": {"version": "5.5.0", "url": "https://registry.npmjs.org/@xterm/xterm/-/xterm-5.5.0.tgz", "sha256": "bd954fa721872170188cc5d7e83e88db3c83c9a18a4e8d24c2783d26491f59d2"},
+    "xterm_fit": {"version": "0.10.0", "url": "https://registry.npmjs.org/@xterm/addon-fit/-/addon-fit-0.10.0.tgz", "sha256": "917ac44972453d5eed52edc1e50260c76398ce48cf2290c2e60671102bba0b33"}
+  },
   "meta": {
     "schema_version": "1.0",
     "generated": "2026-08-28",
@@ -42,9 +50,9 @@
   "v86": {
     "name": "v86",
     "repo": "https://github.com/copy/v86.git",
-    "commit": "b0d8f2c9a7d90d84b8ecc5afff8f50b26cef3eef",
+    "commit": "315b2b0b758703ef0e6cc7b4088d6068f83f3c20",
     "branch": "master",
-    "note": "Verified via git ls-remote https://github.com/copy/v86.git HEAD 2026-08-28 per README-1.md:152. Fork only on upstream blocker."
+    "note": "Pinned to upstream HEAD observed 2026-11-02; build compatibility not yet validated per README-1.md:152. Fork only on upstream blocker."
   },
 
   "emscripten": {

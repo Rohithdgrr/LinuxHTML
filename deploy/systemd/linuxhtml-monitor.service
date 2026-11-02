@@ -1,0 +1,14 @@
+[Unit]
+Description=Check LinuxHTML database and backups
+
+[Service]
+Type=oneshot
+User=linuxhtml
+Group=linuxhtml
+UMask=0077
+EnvironmentFile=-/etc/linuxhtml/monitor.env
+ExecStart=/usr/bin/python3 /opt/linuxhtml/backend/operations.py monitor --database /var/lib/linuxhtml/workspace.sqlite3 --backup-dir /var/backups/linuxhtml --max-age-hours 48 --min-free-mib 256 --alert-url-env LINUXHTML_ALERT_URL
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes

@@ -1,5 +1,5 @@
 # .github/workflows/pages.yml - GitHub Pages deployment per suggestion 9
-# Publishes PWA build to GitHub Pages with correct COOP/COEP headers
+# GitHub Pages preview does not provide COOP/COEP headers.
 name: Pages
 on:
   push:
@@ -32,20 +32,10 @@ jobs:
           python-version: "3.11"
       - name: Build PWA
         run: |
+          python3 tools/fetch_vm_assets.py
           python3 tools/pack.py --tier base --target pwa
           ls -lh build/pwa/
           cat build/manifest-base.json | head -20
-      - name: Add headers for COOP/COEP
-        run: |
-          cat > build/pwa/_headers << 'EOF'
-          /*
-            Cross-Origin-Opener-Policy: same-origin
-            Cross-Origin-Embedder-Policy: require-corp
-            Cross-Origin-Resource-Policy: same-origin
-          EOF
-          cat build/pwa/_headers
-          # For GitHub Pages, also add _headers for Cloudflare Pages compatibility
-          cp build/pwa/_headers build/pwa/_headers.cloud
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

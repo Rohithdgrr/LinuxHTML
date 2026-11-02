@@ -1,3 +1,5 @@
+> **Audit note:** The historical numbers below are unverified and must not be interpreted as measurements of a working Linux guest. The current preview does not boot Linux. Re-measure on a verified guest with reproducible hardware, browser, artifacts and methodology before making performance claims.
+
 # BENCHMARKS.md - Performance Measurements
 
 > **Source of Truth:** `README-1.md:18` Performance: Targets vs Measured Data

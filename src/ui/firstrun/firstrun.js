@@ -9,8 +9,7 @@ export class FirstRun {
   }
   async waitForAcknowledge() {
     if (!this.el || !this.btn) {
-      console.warn("[firstrun] disclosure elements missing");
-      return;
+      throw new Error("First-run disclosure elements are missing; boot blocked");
     }
     // Ensure not bypassable via URL
     if (new URLSearchParams(location.search).has("skip-disclosure") || new URLSearchParams(location.search).has("acknowledged")) {

@@ -6,7 +6,16 @@
 [![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/Rohithdgrr/LinuxHTML/releases/tag/v0.1.0)
 [![License](https://img.shields.io/badge/license-GPL%20v3-blue)](LICENSE)
 
-> **Try it Live:** **https://rohithdgrr.github.io/LinuxHTML/** — PWA with correct COOP/COEP headers via `.github/workflows/pages.yml:1` | `build/pwa` 10 files 2118007 bytes | `7.2s` boot measured per `docs/BENCHMARKS.md:1` `v0.1.0`
+> **Project status:** The current local base build boots an experimental upstream Buildroot 2024.05.2 / Linux 6.8.12 i686 demo guest using v86. It is **not** the planned Linux 6.6 / Alpine system. The guest is old, no external network relay is configured, and guest files are temporary; do not use it for sensitive workloads. Other tiers and the single-file VM are not implemented. GitHub Pages cannot supply COOP/COEP headers. Artifact hashes detect corruption but the manifest is unsigned.
+>
+> To build: `git submodule update --init --recursive`, `python3 tools/fetch_vm_assets.py`, then `python3 tools/pack.py --tier base --target pwa`. Serve `build/pwa` over HTTP. The published site changes only after deployment.
+>
+> The detailed feature descriptions below are historical design goals, not evidence that all features are implemented.
+
+## LinuxHTML OS blueprint
+
+The active product and implementation plan is in [`docs/blueprint/`](docs/blueprint/feature_list.md):
+[Features](docs/blueprint/feature_list.md) · [Backend](docs/blueprint/backend.md) · [Workflows](docs/blueprint/workflow.md) · [Process](docs/blueprint/process.md) · [Tasks](docs/blueprint/tasks.md) · [Problems & solutions](docs/blueprint/problems-solution.md) · [Future scope](docs/blueprint/future-scope.md) · [Mechanism](docs/blueprint/mechanism.md). Historical documentation may describe unimplemented targets.
 
 ![Architecture](docs/images/architecture.svg)
 
@@ -2864,3 +2873,48 @@ features.
 
 The project should expand only after the v1 architecture has been
 validated by real builds, benchmarks, tests, and usage data.
+
+### Experimental terminal
+
+The base PWA uses xterm.js 5.5.0 with a serial connection to an upstream v86 Buildroot demo guest. It provides a real `/bin/sh` and utilities including `vi`, `awk`, `sed`, `grep`, `find`, `tar` and Lua. It is not a full distribution: Bash, Python, Node, Git and gcc are not installed, and no external network relay is configured. No Linux image contains every Linux command. Guest state is temporary unless explicitly captured and restored using the experimental Buildroot checkpoint described below. The browser terminal resizes but does not yet synchronize the guest PTY dimensions; full-screen programs may not match the viewport. Clipboard-button multiline paste asks for confirmation; native keyboard paste does not. The old upstream image is not maintained by this project; do not use it for sensitive workloads.
+
+Pinned artifact URLs and hashes are in `tools/fetch_vm_assets.py` and `versions.lock`; xterm licenses are packaged with the application. The guest binary comes from the upstream v86 demo and is not a LinuxHTML-built distribution.
+
+### Self-hosted backend (stage 1)
+
+An experimental single-owner project-file API and optional Server projects desktop app support explicit server edits, binary uploads/downloads, nested file moves, ZIP import/export, manual local text-file copies, aggregate storage status, and manual online backup/offline restore; they are not integrated with the Linux guest or automatic sync. See [self-hosted backend](docs/blueprint/self-hosted-backend.md) for the API and [server operations](docs/blueprint/operations.md) for backup rotation, monitoring and example timers. Review limitations, security warnings and the staged roadmap. It does not yet implement Alpine, guest persistence, package management, accounts, sync, or remote execution. Do not expose this development service directly to the public internet.
+
+### Optional Alpine VM (experimental)
+
+Alongside the existing Buildroot PWA, an alternative build boots the official Alpine 3.24.3 x86 virtual ISO:
+
+```sh
+python3 tools/fetch_vm_assets.py
+python3 tools/fetch_alpine.py
+python3 tools/pack.py --tier base --target pwa --guest alpine
+python3 -m http.server 8767 --directory build/pwa-alpine
+```
+
+Open `http://127.0.0.1:8767/`. At the Alpine login prompt enter `root` (the live ISO has no password). The persistent shell root and temporary 9P share at `/mnt` are mounted automatically. Boot took about 95 seconds in one Chromium test. The download is approximately 51 MB and the VM uses 512 MiB RAM. `apk` is included, but installs are not functional without a configured network relay; none is provided. This is a live ISO, not an installed system. After login, the shell runs in a browser-backed overlay root; most changes under `/etc`, `/home`, `/usr`, and `/var` persist, while runtime mounts and `/mnt` do not. Boot services run from the live system before the overlay is entered. The pinned checksum detects mismatched bytes, but the script does not verify Alpine's GPG signature and this project has no automatic update or maintenance process. The artifact manifest is unsigned. Do not use this experimental guest for sensitive workloads. The default PWA remains the existing Buildroot build.
+
+### Experimental Buildroot checkpoints
+
+In the default Buildroot terminal, close running programs, run `sync` at the prompt, then choose **Save checkpoint** and confirm. This pauses the VM, compresses a snapshot of its memory and 9P filesystem, and saves it in IndexedDB. To restore after a reload, select **Restore this guest’s saved checkpoint** before starting, then press Enter in the terminal to reveal the restored prompt. Use **Delete checkpoint** to remove it. There is one checkpoint slot for Buildroot; saving replaces it atomically.
+
+This is a manual, browser-local emulator snapshot, **not** an installed filesystem or a reliable backup. It contains unencrypted guest memory, files and secrets; can be large, fail due to quota, be evicted, or become incompatible after emulator/image changes. It cannot currently be exported or imported and does not automatically capture subsequent changes. Export important files separately. Close programs and run `sync` before saving; a checkpoint may capture an inconsistent running system. Restoring requires the same pinned VM artifacts and emulator configuration. Alpine checkpoint controls are disabled after restore crashed in testing; its separate `/persist` data disk is described below.
+
+### Alpine persistent data disk
+
+The optional Alpine build automatically opens a 256 MiB browser-backed ext2 data disk. After logging in as `root`, the app mounts the disk and starts the shell in an overlay root backed by it. Changes to ordinary root files such as `/etc`, `/home`, `/usr`, and `/var`, as well as `/persist`, survive a fresh VM boot. `/proc`, `/sys`, `/dev`, `/run`, `/media/cdrom`, and the shared 9P `/mnt` are separate runtime mounts and do not persist as root files. The base OS still boots from the live ISO; startup services run before the persistent shell is entered, so this is not a fully installed persistent root system. Exiting the persistent shell returns to the temporary live shell. Run `sync` before reloading. Do not close the page during disk activity. The ext2 filesystem has no journal; abrupt browser or power failure can damage it.
+
+The disk is stored unencrypted in IndexedDB for this origin. Browser eviction, manual site-data clearing, quota exhaustion, private browsing, disk failures, or incompatible browser behavior can cause data loss. **Storage status** can request eviction protection where supported; protection is not a backup. Web Locks are required to prevent two tabs from opening the same disk. A storage write failure pauses the VM rather than acknowledging the failed write. In the tested Chromium environment, persistence, cross-tab exclusion, failed-write handling, export and restore passed; other browsers have not been verified.
+
+For a backup, stop all guest programs, run `sync; exit` in the persistent shell, then run the following in the temporary live shell:
+
+```sh
+cd /; sync; umount -l /persist/.linuxhtml-root/root; sync; umount /persist
+```
+
+Confirm that unmount succeeded; if it failed, do not export or import. Then choose **Export disk** and protect the unencrypted gzip image. Restart the VM to re-enter the persistent shell. To restore, perform the same shutdown and unmount steps, then choose **Import disk**; restoration replaces the entire disk after checking its size and ext2 header, then stops the VM. Reload and start again. Import only trusted backups: the header check is not a full filesystem integrity check. A failed import leaves the previous committed disk in place. Backups of the browser text workspace and self-hosted project server do not include this disk.
+
+The blank ext2 disk seed is `src/ui/vm/alpine-data-ext2.img.gz`, generated with BusyBox `mkfs.ext2` and `gzip -n`; its pinned SHA-256 is in `versions.lock`. Disk initialization, restore and export may take time and require sufficient browser storage and memory. This feature is experimental and is not a substitute for an independently maintained, journaled Linux installation or tested off-device backups.

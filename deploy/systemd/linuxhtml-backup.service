@@ -1,0 +1,15 @@
+[Unit]
+Description=LinuxHTML server project backup
+# Example only: adjust paths and user to your installation.
+
+[Service]
+Type=oneshot
+User=linuxhtml
+Group=linuxhtml
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/linuxhtml/backend/operations.py backup --database /var/lib/linuxhtml/workspace.sqlite3 --backup-dir /var/backups/linuxhtml --keep 7
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/backups/linuxhtml

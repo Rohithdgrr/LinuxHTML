@@ -37,23 +37,14 @@ err() { echo "[emulator ERROR] $*" >&2; }
 log "host: $OS"
 
 # Ensure v86 submodule exists
-if [[ ! -d "$ROOT/src/emulator/v86" ]]; then
-  warn "v86 submodule not cloned at src/emulator/v86"
-  log "Would: git submodule update --init src/emulator/v86 && git -C src/emulator/v86 checkout $V86_COMMIT"
-  log "On Windows simulated, creating placeholder structure"
-  mkdir -p "$ROOT/src/emulator/v86/bios"
+if ! git -C "$ROOT/src/emulator/v86" rev-parse --verify HEAD >/dev/null 2>&1; then
+  err "v86 submodule is missing. Run git submodule update --init --recursive"
+  exit 1
 fi
-
-# Check if submodule at correct commit (Linux only)
-if [[ "$OS" == "Linux" && -d "$ROOT/src/emulator/v86/.git" ]]; then
-  CURRENT=$(git -C "$ROOT/src/emulator/v86" rev-parse HEAD 2>/dev/null | cut -c1-12 || echo "unknown")
-  PINNED_SHORT=$(echo "$V86_COMMIT" | cut -c1-12)
-  if [[ "$CURRENT" != "$PINNED_SHORT" ]]; then
-    warn "v86 submodule at $CURRENT != pinned $PINNED_SHORT - should checkout pinned commit"
-    log "Would: git -C src/emulator/v86 fetch && git checkout $V86_COMMIT"
-  else
-    log "v86 at pinned commit $CURRENT [OK]"
-  fi
+CURRENT=$(git -C "$ROOT/src/emulator/v86" rev-parse HEAD)
+if [[ "$CURRENT" != "$V86_COMMIT" ]]; then
+  err "v86 checkout $CURRENT does not match versions.lock $V86_COMMIT"
+  exit 1
 fi
 
 # Check emsdk / emcc

@@ -11,7 +11,9 @@ export function loadScript(src, { globalVar, timeoutMs = 15000 } = {}) {
     el.src = src; el.async = true;
     const to = setTimeout(() => { el.remove(); cache.delete(src);
       reject(new Error(`timeout: ${src}`)); }, timeoutMs);
-    el.onload  = () => { clearTimeout(to); resolve(globalVar ? window[globalVar] : true); };
+    el.onload  = () => { clearTimeout(to);
+      if (globalVar && !window[globalVar]) { cache.delete(src); reject(new Error(`Missing ${globalVar} after loading ${src}`)); return; }
+      resolve(globalVar ? window[globalVar] : true); };
     el.onerror = () => { clearTimeout(to); el.remove(); cache.delete(src);
       reject(new Error(`failed to load ${src}`)); };
     document.head.appendChild(el);

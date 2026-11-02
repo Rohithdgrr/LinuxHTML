@@ -161,7 +161,7 @@ def build_pwa(tier: str):
     sw_content = textwrap.dedent(f"""\
         // sw.js - LinuxHTML PWA Service Worker (README-1.md:815)
         // Versioned cache, shows 'Update available' instead of silent reload.
-        const CACHE_VERSION = "linuxhtml-{tier}-v0.0.0-phase0";
+        const CACHE_VERSION = "linuxhtml-{tier}-{hashlib.sha256((json.dumps(hashes, sort_keys=True) + (ROOT / "src/ui/editor/editor.js").read_text() + (ROOT / "src/ui/xterm/xterm.js").read_text() + pathlib.Path(__file__).read_text()).encode()).hexdigest()[:16]}";
         const ASSETS = [
           "./",
           "./index.html",
@@ -197,6 +197,7 @@ def build_pwa(tier: str):
           <meta name="viewport" content="width=device-width,initial-scale=1"/>
           <title>LinuxHTML - {tier} tier</title>
           <link rel="manifest" href="./manifest.webmanifest"/>
+          <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23007acc'/%3E%3Ctext x='50' y='70' text-anchor='middle' font-size='60' fill='white'%3EL%3C/text%3E%3C/svg%3E"/>
           <meta name="theme-color" content="#f8f9fa"/>
           <style>
             * {{ box-sizing:border-box; }}
@@ -223,7 +224,7 @@ def build_pwa(tier: str):
             #editor-panel .editor-file-bar .file-path {{ color:#ccc; font-size:12px; font-family:Consolas,Monaco,"Courier New",monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
             #editor-panel .editor-file-bar .dirty-dot {{ width:8px; height:8px; border-radius:50%; background:#e8e840; display:none; flex-shrink:0; transition:opacity 0.2s; }}
             #editor-panel .editor-file-bar .dirty-dot.visible {{ display:block; }}
-            #editor-panel #editor-content {{ flex:1; min-height:0; overflow:hidden; padding:0; background:#1e1e1e; }}
+            #editor-panel #editor-content {{ flex:1; min-height:240px; overflow:hidden; padding:0; background:#1e1e1e; }}
             #editor-panel .editor-footer {{ padding:6px 10px; background:#007acc; font-size:11px; color:rgba(255,255,255,0.85); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }}
             #editor-panel .editor-footer .shortcut {{ background:rgba(255,255,255,0.15); padding:1px 5px; border-radius:3px; font-family:Consolas,Monaco,"Courier New",monospace; font-size:10px; margin-left:3px; }}
             #editor-panel .editor-footer .save-feedback {{ color:#4ec9b0; font-weight:500; }}
@@ -236,7 +237,7 @@ def build_pwa(tier: str):
             #editor-panel .editor-explorer .explorer-item:hover {{ background:#37373d; }}
             #editor-panel .editor-explorer .explorer-item.active {{ background:#094771; color:#fff; }}
             #editor-panel .editor-explorer .explorer-item .icon {{ color:#888; font-size:10px; }}
-            #first-run {{ max-width:680px; margin:32px auto; padding:24px; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.06); }}
+            #first-run {{ position:fixed; z-index:2000; top:50%; left:50%; transform:translate(-50%,-50%); width:min(680px, calc(100% - 32px)); max-height:90vh; overflow:auto; margin:0; padding:24px; background:#ffffff; border:1px solid #dee2e6; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.06); }}
             #first-run h2 {{ margin:0 0 12px; color:#212529; font-size:18px; }}
             #first-run p {{ margin:8px 0; color:#495057; font-size:13px; line-height:1.5; }}
             #first-run button {{ margin-top:16px; padding:10px 24px; background:#007acc; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }}
@@ -248,7 +249,7 @@ def build_pwa(tier: str):
           </style>
         </head>
         <body>
-          <div id="statusbar">LinuxHTML <strong>{tier}</strong> | <span id="status">Capability probe...</span> | <span style="color:#6c757d; font-size:11px;">PWA 2118007 bytes | 7.2s boot | v0.1.0</span></div>
+          <div id="statusbar">LinuxHTML <strong>{tier}</strong> | <span id="status">Capability probe...</span> | <span style="color:#6c757d; font-size:11px;">UI preview</span></div>
           <div id="main-layout">
             <div id="screen-wrapper">
               <div style="font-size:11px; color:#6c757d; margin-bottom:8px; align-self:flex-start;">VGA Display 1024x768 • Canvas2D dirty-rect • WebGL2 ?gpu=1 • {tier} 256M</div>
@@ -302,12 +303,12 @@ def build_pwa(tier: str):
               </div>
             </div>
           </div>
-          <div id="first-run">
-            <h2>Welcome to LinuxHTML – First-Run Disclosure (README-1.md:745)</h2>
+          <div id="first-run" role="dialog" aria-modal="true" aria-labelledby="disclosure-title">
+            <h2 id="disclosure-title">Welcome to LinuxHTML – First-Run Disclosure (README-1.md:745)</h2>
             <p><strong>LinuxHTML executes arbitrary guest code via WebAssembly.</strong> Only load builds from sources you trust.</p>
             <p>Browser/WASM sandbox is <em>defense-in-depth, not escape-proof</em> (README-1.md:1372). No independent pen-test in v1. Networking is <strong>OFF</strong> by default; when enabled, only HTTP/HTTPS egress via bridge, CORS applies, no bypass (README-1.md:1174).</p>
             <p>Persistent data: <code>OPFS → IndexedDB → memory</code> (memory loses data on close). Default not encrypted. 20 invariants per README-1.md:2762.</p>
-            <button id="acknowledge">Acknowledge &amp; Boot →</button>
+            <button id="acknowledge">Acknowledge &amp; Open Preview →</button>
           </div>
           <div id="log" style="display:none;"></div>
           <button id="toggle-editor" onclick="const p=document.getElementById('editor-panel'); const show=p.style.display==='none'||!p.style.display; p.style.display=show?'flex':'none'; this.innerHTML=show?'<span style=margin-right:4px;\'>\u2715</span> Close':'<span style=margin-right:4px;\'>\u2328</span> Editor'; this.title=show?'Close editor panel':'Open editor panel';" style="position:fixed; bottom:20px; right:20px; padding:10px 18px; background:linear-gradient(135deg,#007acc,#005f9e); color:white; border:none; border-radius:8px; font-size:13px; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer; z-index:1000; transition:all 0.2s ease; display:flex; align-items:center; gap:4px;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)'" title="Open editor panel">\u2328 Editor</button>
@@ -351,12 +352,21 @@ def build_pwa(tier: str):
               return {{hasSAB, hasOPFS, opfsSync, isolated}};
             }}
             async function verifyIntegrity(){{
-              performance.mark("verify-start");
-              log("verify: SHA-256 check (README-1.md:1501) - Phase 3 verifies wasm/kernel/rootfs/BIOS per README-1.md:1490");
-              await new Promise(r=>setTimeout(r,150));
-              performance.mark("verify-end");
-              performance.measure("verify","verify-start","verify-end");
-              log("verify: OK (Phase3 stub - real SHA-256 after M7 signed manifest per README-1.md:1522)");
+              const response = await fetch("./manifest-{tier}.json", {{cache:"no-store"}});
+              if (!response.ok) throw new Error("Manifest fetch failed: " + response.status);
+              const manifest = await response.json();
+              if (!manifest.artifacts || !Object.keys(manifest.artifacts).length) throw new Error("Empty manifest");
+              for (const info of Object.values(manifest.artifacts)) {{
+                if (!info.file || !/^[a-f0-9]{{64}}$/i.test(info.sha256)) throw new Error("Invalid manifest entry");
+                const url = new URL(info.file, location.href);
+                if (url.origin !== location.origin) throw new Error("Cross-origin artifact rejected");
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Artifact fetch failed: " + info.file);
+                const hash = await crypto.subtle.digest("SHA-256", await res.arrayBuffer());
+                const actual = Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2,"0")).join("");
+                if (actual !== info.sha256.toLowerCase()) throw new Error("Integrity check failed: " + info.file);
+              }}
+              log("Artifact hashes verified against unsigned manifest (not authenticated).");
             }}
             // Display helper - Canvas2D dirty-rect per README-1.md:1200
             function initDisplay() {{
@@ -415,8 +425,8 @@ def build_pwa(tier: str):
               try {{
                 const mod = await import('./assets/js/editor.js');
                 const editor = new mod.Editor({{ storage: null }});
-                await editor.mount();
-                _uiStatus.push("Monaco");
+                if (!await editor.mount()) throw new Error("Editor did not mount");
+                _uiStatus.push("Monaco (in-memory only)");
               }} catch (e) {{
                 _uiStatus.push("Monaco FAILED: " + e.message);
                 console.error(e);
@@ -426,8 +436,8 @@ def build_pwa(tier: str):
               try {{
                 const mod = await import('./assets/js/xterm.js');
                 const xterm = new mod.XtermOverlay({{ container: document.getElementById("screen-wrapper") }});
-                await xterm.init({{ bus: {{ register: () => {{}} }} }});
-                _uiStatus.push("Xterm");
+                await xterm.init(null);
+                _uiStatus.push("Xterm (no guest)");
               }} catch (e) {{
                 _uiStatus.push("Xterm FAILED: " + e.message);
                 console.error(e);
@@ -454,28 +464,29 @@ def build_pwa(tier: str):
               document.getElementById("first-run").style.display="none";
               // Disclosure non-bypassable per README-1.md:745
               if(new URLSearchParams(location.search).has("skip-disclosure")) log("skip-disclosure ignored per README-1.md:750");
-              performance.mark("v86-init-start");
-              log("v86 init (README-1.md:1342) autostart false until verify");
-              await verifyIntegrity();
-              const display=initDisplay();
-              initInput();
-              initEditorResize();
-              // Phase 9 Option B: Enable Monaco/Xterm by default (REAL widgets from CDN)
-              await initEditor();
-              await initXterm();
-              display.updateDirtyRect(10,50,100,20,null);
-              log("Linux boot... (Phase3 M3 + Phase 9 Option B - Monaco/Xterm enabled by default per user choice)");
-              log("keyboard: press A, mouse: click canvas, touch: drag trackpad, Monaco: 400px right, Xterm: overlay");
-              performance.mark("v86-init"); performance.mark("login-prompt");
-              log("Login: root (no password) - terminal visible, keyboard/mouse/touch works per README-1.md:2373, Monaco/Xterm visible per Option B");
-              document.getElementById("status").textContent = "Booted (Phase 9 Option B) - " + _uiStatus.join(" | ") + " - Display/Input ready";
+              try {{
+                await verifyIntegrity();
+                const display=initDisplay();
+                initInput();
+                initEditorResize();
+                await initEditor();
+                await initXterm();
+                display.updateDirtyRect(10,50,100,20,null);
+                log("Preview only: test pattern; no Linux guest is running.");
+                document.getElementById("status").textContent = "Preview only — Linux VM unavailable | " + _uiStatus.join(" | ");
+              }} catch (e) {{
+                console.error(e);
+                log("Preview blocked: " + e.message);
+                document.getElementById("status").textContent = "Preview blocked: " + e.message;
+              }}
             }};
             probe();
             if("serviceWorker" in navigator) {{
               navigator.serviceWorker.register("./sw.js").then(reg=>{{
+                if (!reg) {{ log("Service worker unavailable"); return; }}
                 log("SW registered " + reg.scope);
                 reg.addEventListener("updatefound", ()=> log("SW update found - show Update available (no silent reload per README-1.md:815)"));
-              }});
+              }}).catch(e => log("Service worker unavailable: " + e.message));
             }}
           </script>
         </body>
@@ -501,12 +512,12 @@ def build_pwa(tier: str):
         "alpine": alpine_ver,
         "emscripten": emcc_ver,
         "artifacts": {k: {"file": file_map.get(k, f"assets/{k}"), "sha256": v} for k,v in hashes.items()},
-        "note": "Phase 2: real kernel bzImage MZ + rootfs hsqs + wasm 00asm + disk seed; full real build on Linux per README-1.md:276"
+        "note": "Unsigned artifact hashes; packaged files may include placeholders. This preview does not boot Linux."
     }
     ensure_dir(BUILD / "manifests")
     (BUILD / f"manifest-{tier}.json").write_text(json.dumps(manifest_json, indent=2), encoding="utf-8")
-    (BUILD / f"manifest-{tier}.json.sig").write_text("placeholder signature - Phase 7 will sign with release key", encoding="utf-8")
-    print(f"  wrote build/manifest-{tier}.json + .sig (placeholder)")
+    (PWA_DIR / f"manifest-{tier}.json").write_text(json.dumps(manifest_json, indent=2), encoding="utf-8")
+    print(f"  wrote unsigned manifests to build/ and build/pwa/")
 
     # Size budget check (README-1.md:677)
     total = sum(p.stat().st_size for p in PWA_DIR.rglob("*") if p.is_file())
@@ -590,6 +601,7 @@ def main():
     parser = argparse.ArgumentParser(description="LinuxHTML pack (README-1.md:630)")
     parser.add_argument("--tier", choices=["micro","base","standard"], default="base", help="Tier (default base) per README-1.md:664")
     parser.add_argument("--target", choices=["pwa","single-file"], default="pwa", help="Target (default pwa) per README-1.md:760")
+    parser.add_argument("--guest", choices=["buildroot", "alpine"], default="buildroot", help="Experimental guest image (Alpine requires tools/fetch_alpine.py)")
     args = parser.parse_args()
 
     tier = args.tier
@@ -604,11 +616,11 @@ def main():
     ensure_dir(BUILD)
 
     if target == "pwa":
-        p = build_pwa(tier)
-        print(f"[pack.py] Done: {p}/ (serve with python3 tools/serve.py per README-1.md:718)")
+        from pack_vm import build_pwa as build_real_pwa
+        p = build_real_pwa(tier, guest=args.guest)
+        print(f"[pack.py] Done: {p}/ (serve this directory over HTTP locally or HTTPS when deployed)")
     else:
-        p = build_single_file(tier)
-        print(f"[pack.py] Done: {p} (offline/demo, single-core per README-1.md:808)")
+        raise SystemExit("Single-file VM packaging is not implemented; use --target pwa")
 
 if __name__ == "__main__":
     main()
