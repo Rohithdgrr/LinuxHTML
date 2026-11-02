@@ -300,6 +300,73 @@ const feedback = document.querySelector('#file-status');
 const nameInput = document.querySelector('#filename');
 const textInput = document.querySelector('#filecontent');
 let editorBaseline = {name: nameInput.value, content: textInput.value};
+
+const findPanel = document.querySelector('#editor-find-panel');
+const findInput = document.querySelector('#editor-find');
+const replaceInput = document.querySelector('#editor-replace');
+const matchCase = document.querySelector('#editor-match-case');
+const findStatus = document.querySelector('#editor-find-status');
+function findMatches() {
+  const query = findInput.value;
+  if (!query) return [];
+  // Escape all regex metacharacters so search is literal, not executable regex.
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const expression = new RegExp(escaped, matchCase.checked ? 'gu' : 'giu');
+  return Array.from(textInput.value.matchAll(expression), m => ({start:m.index, end:m.index + m[0].length}));
+}
+function locateMatch(backwards = false) {
+  if (!findInput.value) { findStatus.textContent = 'Enter text to find.'; return false; }
+  const matches = findMatches();
+  if (!matches.length) { findStatus.textContent = 'No matches found.'; return false; }
+  const start = textInput.selectionStart, end = textInput.selectionEnd;
+  let index = backwards ? matches.map(m => m.end <= start).lastIndexOf(true) : matches.findIndex(m => m.start >= end);
+  let wrapped = false;
+  if (index < 0) { index = backwards ? matches.length - 1 : 0; wrapped = true; }
+  const match = matches[index];
+  textInput.focus({preventScroll:true});
+  textInput.setSelectionRange(match.start, match.end);
+  findStatus.textContent = `Match ${index + 1} of ${matches.length}${wrapped ? ' (wrapped)' : ''}.`;
+  return true;
+}
+document.querySelector('#editor-next').addEventListener('click', () => locateMatch());
+document.querySelector('#editor-previous').addEventListener('click', () => locateMatch(true));
+document.querySelector('#editor-replace-one').addEventListener('click', () => {
+  const matches = findMatches();
+  const selected = matches.find(m => m.start === textInput.selectionStart && m.end === textInput.selectionEnd);
+  if (!selected) {
+    if (locateMatch()) findStatus.textContent += ' Select Replace selected again to change it.';
+    return;
+  }
+  textInput.setRangeText(replaceInput.value, selected.start, selected.end, 'end');
+  textInput.dispatchEvent(new Event('input', {bubbles:true}));
+  findStatus.textContent = 'Replaced one match. Save locally to keep changes.';
+});
+document.querySelector('#editor-replace-all').addEventListener('click', () => {
+  if (!findInput.value) { findStatus.textContent = 'Enter text to find.'; return; }
+  const matches = findMatches();
+  if (!matches.length) { findStatus.textContent = 'No matches found.'; return; }
+  if (!confirm(`Replace ${matches.length} match${matches.length === 1 ? '' : 'es'} in the current editor? Changes are not saved automatically.`)) {
+    findStatus.textContent = 'Replace all cancelled. No changes made.'; return;
+  }
+  // Assemble from original indices so replacement text containing the query or
+  // dollar signs is treated literally and is never recursively replaced.
+  const original = textInput.value, parts = []; let previous = 0;
+  for (const match of matches) { parts.push(original.slice(previous, match.start), replaceInput.value); previous = match.end; }
+  parts.push(original.slice(previous));
+  textInput.setRangeText(parts.join(''), 0, original.length, 'start');
+  textInput.dispatchEvent(new Event('input', {bubbles:true}));
+  findStatus.textContent = `Replaced ${matches.length} match${matches.length === 1 ? '' : 'es'}. Save locally to keep changes.`;
+});
+const workspaceWindow = document.querySelector('[data-window="workspace"]');
+workspaceWindow.addEventListener('keydown', event => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+  if (event.key.toLowerCase() === 'f') {
+    event.preventDefault(); findPanel.open = true; findInput.focus();
+  } else if (event.key.toLowerCase() === 's') {
+    event.preventDefault(); document.querySelector('#save-local').click();
+  }
+});
+
 function acceptReplacement() {
   if (nameInput.value === editorBaseline.name && textInput.value === editorBaseline.content) return true;
   return confirm('Replace the current editor content? Unsaved changes will be lost.');

@@ -63,3 +63,6 @@
 
 .start-progress{padding:10px 12px;border-radius:8px;background:#eaf3ff;color:#265686!important;font-weight:600;overflow-wrap:anywhere}
 #start-error:not(:empty){padding:10px 12px;border-radius:8px;background:#fff0ed;color:#a4362b!important;overflow-wrap:anywhere}
+
+.editor-find{border:1px solid #dfe8ef;border-radius:9px;background:#f7fafc;padding:8px 10px;margin:0 0 10px;color:#334b62}.editor-find summary{cursor:pointer;font-size:12px;font-weight:700}.editor-find summary span{float:right;color:#7a8da1;font-size:10px;font-weight:500}.editor-find-fields{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:8px}.editor-find-fields label{font-size:11px;font-weight:600;margin:0}.editor-find-fields input:not([type=checkbox]){grid-row:2;min-width:0;width:100%;margin:0}.editor-find-fields .editor-case{grid-column:1/-1;display:flex;align-items:center;gap:7px}.editor-case input{width:auto!important;margin:0!important}.editor-find-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.editor-find-actions button{padding:7px 9px}.editor-find p{margin:6px 0 0;font-size:11px}.editor-area textarea{min-width:0}
+@media(max-width:520px){.editor-find-fields{grid-template-columns:1fr}.editor-find-fields input:not([type=checkbox]){grid-row:auto}.editor-find summary span{display:none}.editor-find-actions button{min-height:40px}}

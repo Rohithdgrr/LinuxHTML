@@ -13,7 +13,8 @@ Status: staged plan, not a claim that future features are complete. The publishe
 
 ## 2. Editing and desktop
 - Prototype lazily loaded CodeMirror 6 with plain-text fallback; compare Monaco with measured load, memory, accessibility and touch behavior. A language service or VS Code extension ecosystem is not implied.
-- Add editor search, shortcuts and unsaved-change protection; improve desktop session restoration.
+- [x] Add literal find/replace and find/save shortcuts to the current text editor, with confirmation and unsaved-change protection.
+- [ ] Improve desktop session restoration.
 - Evaluate OS.js or another window manager only if maintenance or capability gaps justify migration. Review licenses, mobile behavior and offline packaging before adoption.
 
 ## 3. Files and recovery

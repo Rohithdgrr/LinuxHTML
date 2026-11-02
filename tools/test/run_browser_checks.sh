@@ -28,7 +28,7 @@ run_checked() {
 curl --silent --show-error --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:8765/ >/dev/null
 kill -0 "$server_pid"
 run_checked open playwright-cli -s=arena open http://127.0.0.1:8765/ --browser=chromium
-for test in desktop workspace file_manager notes calculator developer learning terminal startup_recovery mobile settings backup; do
+for test in desktop workspace editor file_manager notes calculator developer learning terminal startup_recovery mobile settings backup; do
   echo "::group::Browser test: $test"
   run_checked "$test" timeout 180s playwright-cli -s=arena run-code "$(cat "tools/test/${test}_browser.js")"
   echo "::endgroup::"
