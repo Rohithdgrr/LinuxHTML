@@ -130,6 +130,58 @@ choices.forEach(button => button.addEventListener('click', () => {
   try { localStorage.setItem('linuxhtml-theme', button.dataset.theme); document.querySelector('#theme-status').textContent = 'Appearance saved in this browser.'; }
   catch { document.querySelector('#theme-status').textContent = 'Appearance changed for this session; browser storage is unavailable.'; }
 }));
+// Layout is an explicit browser-local snapshot, not VM state or file content.
+const layoutKey = 'linuxhtml-desktop-layout-v1';
+const layoutStatus = document.querySelector('#layout-status');
+const mobileLayout = () => window.matchMedia('(max-width: 700px)').matches;
+function savedGeometry(win) {
+  if (mobileLayout()) return null;
+  if (!win.classList.contains('maximized')) return geometry(win);
+  // Maximize preserves the prior inline geometry. If there was none, restore the
+  // app's normal CSS defaults rather than saving the maximized rectangle.
+  const values = ['left','top','width','height'].map(key => parseFloat(win.style[key]));
+  return values.every(Number.isFinite) ? {x:values[0], y:values[1], width:values[2], height:values[3]} : null;
+}
+document.querySelector('#save-layout').addEventListener('click', () => {
+  try {
+    const items = windows.filter(w => !w.hidden && w.dataset.window !== 'settings')
+      .sort((a,b) => (Number(a.style.zIndex) || 0) - (Number(b.style.zIndex) || 0))
+      .map(w => ({name:w.dataset.window, maximized:w.classList.contains('maximized'), geometry:savedGeometry(w)}));
+    localStorage.setItem(layoutKey, JSON.stringify({version:1, windows:items}));
+    layoutStatus.textContent = `Saved ${items.length} open app window${items.length === 1 ? '' : 's'} in this browser. Files and VM state are not included.`;
+  } catch (error) { layoutStatus.textContent = `Could not save layout: ${error.message || error.name}. Browser storage may be unavailable.`; }
+});
+document.querySelector('#restore-layout').addEventListener('click', () => {
+  try {
+    const raw = localStorage.getItem(layoutKey);
+    if (!raw) { layoutStatus.textContent = 'No saved layout yet. Open apps and choose Save layout.'; return; }
+    if (raw.length > 20000) throw new Error('Saved layout is too large');
+    const saved = JSON.parse(raw);
+    if (!saved || saved.version !== 1 || !Array.isArray(saved.windows) || saved.windows.length > windows.length) throw new Error('Saved layout is invalid');
+    const seen = new Set();
+    // Validate the whole snapshot before altering any windows.
+    for (const item of saved.windows) {
+      if (!item || typeof item.name !== 'string' || item.name === 'settings' || seen.has(item.name) || !windows.some(w => w.dataset.window === item.name) || typeof item.maximized !== 'boolean') throw new Error('Saved layout is invalid');
+      seen.add(item.name);
+      if (item.geometry !== null && (!item.geometry || !['x','y','width','height'].every(k => Number.isFinite(item.geometry[k])) || item.geometry.width <= 0 || item.geometry.height <= 0)) throw new Error('Saved layout geometry is invalid');
+    }
+    for (const item of saved.windows) {
+      const win = windows.find(w => w.dataset.window === item.name);
+      openWindow(item.name);
+      if (win.classList.contains('maximized') !== item.maximized) maximize(win);
+      if (item.geometry && !mobileLayout()) setGeometry(win, item.geometry.x, item.geometry.y, item.geometry.width, item.geometry.height);
+    }
+    // Keep Settings and its status visible after bringing restored apps forward.
+    const settings = windows.find(w => w.dataset.window === 'settings');
+    settings.style.zIndex = ++z;
+    document.querySelector('#restore-layout').focus({preventScroll:true});
+    layoutStatus.textContent = `Restored ${saved.windows.length} app window${saved.windows.length === 1 ? '' : 's'}. Other open windows were kept; the VM was not started.`;
+  } catch (error) { layoutStatus.textContent = `Could not restore layout: ${error.message || error.name}. No invalid layout was applied.`; }
+});
+document.querySelector('#clear-layout').addEventListener('click', () => {
+  try { localStorage.removeItem(layoutKey); layoutStatus.textContent = 'Saved layout cleared. Open windows and files were not changed.'; }
+  catch (error) { layoutStatus.textContent = `Could not clear layout: ${error.message || error.name}.`; }
+});
 // Keep windows reachable if the viewport is resized or the device rotates.
 window.addEventListener('resize', () => {
   for (const win of windows) if (!win.hidden && !win.classList.contains('maximized') && win.style.left) {
