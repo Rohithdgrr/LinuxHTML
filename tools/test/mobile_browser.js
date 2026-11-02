@@ -34,7 +34,6 @@ async page => {
     await p.getByRole('button',{name:'Close Learn Linux'}).tap();
     await p.getByRole('button',{name:'Open Notes',exact:true}).tap();
     check((await p.locator('#note-count').innerText())==='1','Saved notes missing');
-    await p.screenshot({path:'/home/user/linuxhtml-mobile-responsive.png'});
     check(errors.length===0,'Page errors: '+errors.join(', '));
     return 'PASS: mobile notes, Dev Studio, editor, calculator, real VM command, lesson and small viewport';
   } finally {await ctx.close()}

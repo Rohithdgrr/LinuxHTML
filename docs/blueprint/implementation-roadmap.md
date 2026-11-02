@@ -4,6 +4,7 @@ Status: staged plan, not a claim that future features are complete. The publishe
 
 ## 1. Reliability and device usability — in progress
 - [x] Mobile-sized app panels, touch controls and terminal command input; Chromium mobile viewport end-to-end test.
+- [ ] Run current Buildroot packaging, backend, and desktop/mobile Chromium workflows in PR CI.
 - [ ] Test physical Android and iOS devices and desktop Chrome, Firefox and Safari; publish the actual support matrix.
 - [x] Make app-update availability and storage state visible without automatically reloading or destroying work; verified with a real waiting service worker in Chromium.
 - [x] Show Linux asset-loading progress and recoverable download/integrity errors; test a failed mobile startup and retry.
@@ -33,3 +34,5 @@ Status: staged plan, not a claim that future features are complete. The publishe
 - Add audio, graphics, push and performance research only for measured needs. Background web push requires permission, service worker and push infrastructure; platform support varies. Profile alternative execution approaches rather than assuming they replace v86.
 
 All stages require license and dependency review, pinned artifacts, upgrade and rollback paths, and honest limitations. No dates or universal-device support are promised.
+
+CI coverage is limited to the implemented Buildroot preview and backend; it does not validate Alpine VM persistence, cross-browser support, security, QEMU, networking or planned rootfs builds. The historical nightly/release workflows have not yet been modernized.
