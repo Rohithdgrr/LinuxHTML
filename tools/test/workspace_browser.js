@@ -36,6 +36,7 @@ async page => {
     await b.getByRole('button', { name: 'Open Files and editor' }).click();
     b.once('dialog', dialog => dialog.accept());
     await b.locator('#import-file').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') });
+    await b.waitForFunction(() => document.querySelector('#file-status').textContent.startsWith('Imported notes.txt'));
     check(await b.locator('#filecontent').inputValue() === 'hello', 'Import failed');
     check((await b.locator('#file-status').innerText()).includes('Save locally'), 'Import must warn that it is unsaved');
     const aba = await b.evaluate(async () => {
